@@ -1,0 +1,2566 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>C++ 动画学习室 · 核心难点逐步演示</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f4ef;
+      --panel: #fffefa;
+      --panel-border: #e0e5dd;
+      --text: #293c35;
+      --muted: #5f6e65;
+      --accent: #326650;
+      --accent-soft: #eaf1e9;
+      --cyan: #32667a;
+      --green: #356d50;
+      --amber: #88601c;
+      --red: #a54643;
+      --purple: #735887;
+      --shadow: 0 5px 24px rgba(43, 63, 49, .035);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-padding-top: 24px; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, select { font: inherit; }
+    button, summary, select { -webkit-tap-highlight-color: transparent; }
+    button { cursor: pointer; }
+    button, select, summary { touch-action: manipulation; }
+    button:focus-visible, select:focus-visible, summary:focus-visible,
+    [tabindex]:focus-visible, a:focus-visible {
+      outline: 3px solid #4c7b66;
+      outline-offset: 4px;
+    }
+    ::selection { background: #d6e6d9; color: #243f31; }
+    h1, h2, h3, p { margin: 0; }
+    svg { display: block; }
+    .skip-link {
+      position: fixed; top: 12px; left: 16px; z-index: 10;
+      padding: 10px 16px; border-radius: 10px;
+      background: var(--accent); color: white; transform: translateY(-180%);
+    }
+    .skip-link:focus { transform: translateY(0); }
+    .site-header, .page-shell, .site-footer {
+      width: min(1700px, calc(100% - 64px)); margin-inline: auto;
+    }
+    .site-header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 24px; padding: 30px 0 26px; border-bottom: 1px solid var(--panel-border);
+    }
+    .brand { display: flex; align-items: center; gap: 15px; min-width: 0; }
+    .brand-mark {
+      display: grid; place-items: center; flex: 0 0 49px; height: 49px;
+      border-radius: 16px; background: #e3ebdf; color: #3c6148;
+      font: 700 20px 'Consolas', monospace; letter-spacing: -1.5px;
+    }
+    .brand h1 { font-size: 23px; line-height: 1.4; font-weight: 650; letter-spacing: .5px; }
+    .brand p { font-size: 12px; color: var(--muted); margin-top: 5px; letter-spacing: .4px; }
+    .header-note { color: var(--muted); font-size: 13px; text-align: right; }
+    .header-note strong { display: block; color: #49624f; font-weight: 500; }
+    .page-shell {
+      display: grid; grid-template-columns: 244px minmax(0, 1fr);
+      gap: 30px; align-items: start; padding-top: 28px;
+    }
+    .sidebar { min-width: 0; position: sticky; top: 24px; }
+    .topic-directory {
+      background: var(--panel); border: 1px solid var(--panel-border);
+      border-radius: 18px; box-shadow: var(--shadow); overflow: hidden;
+    }
+    .directory-summary {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; padding: 18px; font-size: 14px; font-weight: 650;
+      cursor: pointer; list-style: none;
+    }
+    .directory-summary::-webkit-details-marker { display: none; }
+    .directory-summary small { font-size: 11px; font-weight: 400; color: var(--muted); }
+    .directory-summary::after {
+      content: ''; width: 7px; height: 7px; margin-right: 2px;
+      border-right: 1.5px solid #637367; border-bottom: 1.5px solid #637367;
+      transform: rotate(45deg); transition: transform .18s;
+    }
+    details:not([open]) .directory-summary::after { transform: rotate(-45deg); }
+    .tabs {
+      padding: 0 10px 14px; max-height: calc(100vh - 210px);
+      overflow-y: auto; scrollbar-width: thin; scrollbar-color: #c7d1c7 transparent;
+    }
+    .nav-group + .nav-group { margin-top: 17px; }
+    .nav-group h3 {
+      display: flex; justify-content: space-between; gap: 10px;
+      padding: 10px 9px 8px; color: var(--muted); font-weight: 500; font-size: 11px;
+      letter-spacing: .6px;
+    }
+    .nav-group h3 span { color: #65736a; font-size: 10px; letter-spacing: 0; }
+    .tab-btn {
+      width: 100%; display: grid; grid-template-columns: 24px minmax(0, 1fr);
+      align-items: baseline; gap: 7px; padding: 10px 9px;
+      border: 1px solid transparent; border-radius: 10px;
+      background: transparent; color: #54625b; text-align: left;
+      font-size: 12.5px; font-weight: 450; line-height: 1.65;
+      transition: background .18s, border-color .18s, color .18s;
+    }
+    .tab-btn:hover { background: #f2f4ee; color: #304c3d; }
+    .tab-btn.active { background: var(--accent-soft); border-color: #cdddcf; color: #2e5e46; font-weight: 600; }
+    .tab-number { font-family: 'Consolas', monospace; font-size: 11px; color: #65736a; font-weight: 400; }
+    .tab-btn.active .tab-number { color: #3f6b51; }
+    .sidebar-note { padding: 17px 9px; color: var(--muted); font-size: 12px; line-height: 1.8; }
+    .lesson { min-width: 0; }
+    .lesson-intro { margin-bottom: 22px; }
+    .eyebrow { color: #5f7464; font-size: 11px; font-weight: 600; letter-spacing: 1.5px; }
+    .lesson-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+    .lesson-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: #a3b0a3; }
+    .lesson-meta .chapter { color: var(--muted); font-size: 12px; }
+    #topicTitle { font-size: clamp(20px, 1.65vw, 28px); line-height: 1.55; font-weight: 620; letter-spacing: .1px; text-wrap: pretty; }
+    .lesson-description { color: var(--muted); font-size: 13px; margin-top: 8px; }
+    .lesson-toolbar {
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 16px; background: var(--panel);
+      border: 1px solid var(--panel-border); border-radius: 14px;
+      padding: 13px 17px; margin-bottom: 20px; box-shadow: var(--shadow);
+    }
+    .step-overview { display: flex; align-items: center; flex-wrap: wrap; gap: 15px; }
+    .step-caption { color: var(--muted); font-size: 12px; white-space: nowrap; }
+    #stepIndicator { color: #355d47; font-size: 14px; font-weight: 650; font-variant-numeric: tabular-nums; margin-left: 7px; }
+    .step-dots { display: flex; gap: 6px; flex-wrap: wrap; }
+    .step-dot {
+      display: grid; place-items: center; width: 32px; height: 32px;
+      border-radius: 9px; border: 1px solid #dde4da; background: #fafbf7;
+      color: #66726b; font-size: 12px; font-variant-numeric: tabular-nums;
+      transition: background .18s, border-color .18s;
+    }
+    .step-dot:hover { border-color: #9fb7a3; background: #edf3eb; }
+    .step-dot.active { border-color: var(--accent); background: var(--accent); color: white; }
+    .speed-control { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+    .speed-select { border: 1px solid #dae2d7; border-radius: 8px; padding: 6px 9px; color: #485f50; background: #fafbf7; font-size: 12px; cursor: pointer; }
+    .workspace {
+      display: grid; grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
+      gap: 20px; align-items: start;
+    }
+    .card {
+      min-width: 0; padding: 23px; border: 1px solid var(--panel-border);
+      border-radius: 18px; background: var(--panel); box-shadow: var(--shadow);
+    }
+    .card-heading { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .section-icon { color: #5e7966; background: #eef3e9; border-radius: 9px; padding: 7px; flex-shrink: 0; }
+    .section-icon svg { width: 17px; height: 17px; }
+    .card-heading h3 { font-size: 15px; font-weight: 600; }
+    .card-heading p { color: var(--muted); font-size: 11px; margin-top: 1px; }
+    .analogy-box {
+      background: #f4f5ed; border: 1px solid #e4e8d8; border-radius: 12px;
+      padding: 14px 16px; font-size: 13px; color: #59634b; line-height: 1.9;
+      margin-bottom: 18px; overflow-wrap: anywhere;
+    }
+    .analogy-box b { font-weight: 600; color: #45533f; }
+    code { font-family: 'Cascadia Code', 'Consolas', 'Courier New', monospace; font-size: .94em; }
+    .analogy-box code, .explain-banner code {
+      padding: 1px 4px; border-radius: 4px; background: rgba(61, 91, 63, .065);
+      box-decoration-break: clone; -webkit-box-decoration-break: clone;
+    }
+    .code-label { display: flex; justify-content: space-between; gap: 12px; margin: 0 1px 9px; color: var(--muted); font-size: 11px; }
+    .code-list {
+      position: relative;
+      padding: 12px 0; border: 1px solid #e1e5dd; border-radius: 12px;
+      background: #f7f8f3; overflow: auto; max-height: 600px;
+      scrollbar-width: thin; scrollbar-color: #c6d1c4 transparent;
+    }
+    .code-line {
+      display: grid; grid-template-columns: 25px minmax(0, 1fr);
+      align-items: baseline; gap: 10px; padding: 7px 14px;
+      border-left: 3px solid transparent; color: #58665d; line-height: 1.85;
+    }
+    .line-number { color: #65736a; font: 11px/1.8 'Consolas', monospace; text-align: right; user-select: none; }
+    .code-text { font-size: 12.5px; white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 2; }
+    .code-line.active { border-left-color: #54896a; background: #e9f0e4; color: #2a5037; }
+    .code-line.active .line-number { color: #41664c; font-weight: 700; }
+    .stage-container {
+      position: relative; min-height: 390px; border: 1px solid #e2e8df;
+      border-radius: 13px; padding: 14px; overflow: hidden; background: #f6f8f3;
+      background-image: radial-gradient(#dfe6dc .6px, transparent .6px); background-size: 17px 17px;
+    }
+    .memory-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; min-height: 355px; animation: reveal-step .22s ease-out; }
+    .mem-col { min-width: 0; padding: 12px; border: 1px solid #dfe6dc; border-radius: 11px; background: #fafcf7; position: relative; }
+    .zone-title { margin-bottom: 14px; font-size: 12px; font-weight: 600; line-height: 1.8; overflow-wrap: anywhere; }
+    .mem-block { margin-bottom: 10px; border: 1px solid #b8c9ce; border-radius: 9px; padding: 10px 11px; background: #fffefa; }
+    .mem-block:last-child { margin-bottom: 0; }
+    .mem-block.retained { border-color: #d2ddd0; background: #f5f8f1; }
+    .mem-block.leak { border-color: #dab9ae; background: #faf0eb; }
+    .mem-block.moved { border-color: #c9d2c7; border-style: dashed; background: #f1f3ee; }
+    .mem-block.highlight { border-color: #c4ae7f; background: #faf5e8; }
+    .addr { font-size: 11.5px; color: var(--muted); line-height: 1.8; overflow-wrap: anywhere; }
+    .val { font-family: 'Cascadia Code', 'Consolas', 'Microsoft YaHei', monospace; font-size: 13px; font-weight: 550; margin-top: 5px; line-height: 1.8; overflow-wrap: anywhere; }
+    .svg-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: .65; }
+    .anim-arrow { stroke-dasharray: 6 5; animation: dashMove 2.4s linear infinite; }
+    @keyframes dashMove { to { stroke-dashoffset: -22; } }
+    @keyframes reveal-step { from { opacity: .65; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+    .explain-section { padding-top: 20px; }
+    .explain-label { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; color: #577260; font-size: 11px; letter-spacing: .6px; }
+    .explain-label::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #7a9678; }
+    .explain-banner { font-size: 13.5px; line-height: 1.95; color: #4a5d52; overflow-wrap: anywhere; }
+    .explain-banner b { color: #344e3c; font-weight: 600; }
+    .controls {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+      gap: 12px; width: 100%; padding-top: 12px;
+      border-top: 1px solid var(--panel-border);
+    }
+    .controls-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      min-height: 40px; padding: 9px 15px; border: 1px solid var(--accent);
+      border-radius: 9px; background: var(--accent); color: #fffefa;
+      font-size: 12.5px; line-height: 1.4; font-weight: 500;
+      transition: background .18s, border-color .18s;
+    }
+    .btn:hover:not(:disabled) { background: #28563f; border-color: #28563f; }
+    .btn.secondary { color: #506455; background: #f7f8f2; border-color: #dce3d6; }
+    .btn.secondary:hover:not(:disabled) { background: #edf2e7; border-color: #b6c9b4; }
+    .btn.quiet { background: transparent; color: #667668; border-color: transparent; }
+    .btn.quiet:hover:not(:disabled) { color: #3f654a; background: #f0f4eb; border-color: transparent; }
+    .btn.auto-active { background: #e7f0e2; color: #375e40; border-color: #abc4a4; }
+    .btn:disabled { background: #f2f3ef; color: #929d92; border-color: #e6e9e1; cursor: default; }
+    .lesson-footnote { margin: 15px 4px 0; color: #65736a; font-size: 11px; }
+    .site-footer { padding: 28px 0; color: #65736a; font-size: 11px; letter-spacing: .4px; }
+    @media (min-width: 1500px) { .card { padding: 26px; } .workspace { gap: 24px; } }
+    @media (max-width: 1240px) {
+      .site-header, .page-shell, .site-footer { width: calc(100% - 40px); }
+      .page-shell { grid-template-columns: 220px minmax(0, 1fr); gap: 22px; }
+      .workspace { grid-template-columns: minmax(0, 1fr); }
+      .code-list { max-height: 420px; }
+      .memory-grid { min-height: 320px; }
+    }
+    @media (max-width: 900px) {
+      .site-header { padding: 22px 0; }
+      .page-shell { grid-template-columns: minmax(0, 1fr); gap: 22px; padding-top: 20px; }
+      .sidebar { position: static; }
+      .sidebar-note { display: none; }
+      .directory-summary { padding: 14px 18px; }
+      .tabs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; max-height: 340px; }
+      .nav-group + .nav-group { margin-top: 0; }
+      .lesson-intro { margin-bottom: 18px; }
+      .lesson-toolbar { margin-bottom: 16px; }
+      .header-note { font-size: 11px; }
+    }
+    @media (max-width: 580px) {
+      .site-header, .page-shell, .site-footer { width: calc(100% - 28px); }
+      .brand { gap: 11px; }
+      .brand-mark { flex-basis: 41px; height: 41px; border-radius: 13px; font-size: 17px; }
+      .brand h1 { font-size: 20px; }
+      .brand p { font-size: 10px; letter-spacing: 0; }
+      .header-note { display: none; }
+      .tabs { grid-template-columns: minmax(0, 1fr); max-height: 340px; }
+      .tab-btn { font-size: 13px; padding: 10px 12px; }
+      .card { padding: 17px; border-radius: 15px; }
+      .lesson-toolbar { gap: 12px; padding: 13px; }
+      .step-overview { gap: 9px; }
+      .step-dot { width: 34px; height: 34px; }
+      .memory-grid { grid-template-columns: minmax(0, 1fr); min-height: 0; gap: 12px; }
+      .stage-container { min-height: 0; padding: 10px; }
+      .svg-overlay { display: none; }
+      .mem-col { padding: 12px; }
+      .code-line { grid-template-columns: 20px minmax(0, 1fr); gap: 8px; padding-inline: 9px; }
+      .code-text { font-size: 12px; }
+      .controls { padding-top: 12px; gap: 10px; }
+      .controls-group { width: 100%; }
+      .controls-group .btn { flex: 1; min-height: 42px; }
+      .controls-play { order: -1; }
+      .lesson-footnote { line-height: 1.9; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+    }
+    @media print {
+      .sidebar, .lesson-toolbar, .controls, .header-note, .skip-link { display: none; }
+      body { background: white; }
+      .page-shell, .workspace { display: block; }
+      .site-header, .page-shell { width: 100%; }
+      .card { box-shadow: none; margin-block: 14px; }
+      .code-list { max-height: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#lesson">跳到学习内容</a>
+  <header class="site-header">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">C++</div>
+      <div>
+        <h1>C++ 动画学习室</h1>
+        <p>跟着代码，理解每一次状态变化</p>
+      </div>
+    </div>
+    <p class="header-note"><strong>20 个专题 · 69 个演示步骤</strong>配合《C++ 学习手册》第 0—9 章学习</p>
+  </header>
+
+  <div class="page-shell">
+    <aside class="sidebar" aria-label="学习目录">
+      <details class="topic-directory" id="topicDirectory" open>
+        <summary class="directory-summary">专题目录<small>20 个专题</small></summary>
+        <nav class="tabs" id="tabs" aria-label="选择学习专题">
+            <section class="nav-group" aria-labelledby="navGroup0">
+              <h3 id="navGroup0">基础核心<span>01—05</span></h3>
+              <button type="button" class="tab-btn" data-chapter="核心 01" onclick="switchTopic(0)" aria-controls="lesson"><span class="tab-number" aria-hidden="true">01</span><span>栈 vs 堆与指针寻址</span></button>
+              <button type="button" class="tab-btn" data-chapter="核心 02" onclick="switchTopic(1)" aria-controls="lesson"><span class="tab-number" aria-hidden="true">02</span><span>深浅拷贝与 std::move</span></button>
+              <button type="button" class="tab-btn" data-chapter="核心 03" onclick="switchTopic(2)" aria-controls="lesson"><span class="tab-number" aria-hidden="true">03</span><span>智能指针引用计数</span></button>
+              <button type="button" class="tab-btn" data-chapter="核心 04" onclick="switchTopic(3)" aria-controls="lesson"><span class="tab-number" aria-hidden="true">04</span><span>虚函数表 vptr/vtable</span></button>
+              <button type="button" class="tab-btn" data-chapter="核心 05" onclick="switchTopic(4)" aria-controls="lesson"><span class="tab-number" aria-hidden="true">05</span><span>RAII 全自动保姆</span></button>
+            </section>
+            <section class="nav-group" aria-labelledby="navGroup1">
+              <h3 id="navGroup1">语言与对象<span>第 0—4 章</span></h3>
+              <button type="button" class="tab-btn" data-chapter="手册第0-1章" onclick="switchTopic(5)" aria-controls="lesson"><span class="tab-number" aria-hidden="true">06</span><span>const指针锁 &amp; 引用延寿</span></button>
+              <button type="button" class="tab-btn" data-chapter="手册第2章" onclick="switchTopic(6)" aria-controls="lesson"><span class="tab-number" aria-hidden="true">07</span><span>初始化顺序坑 &amp; 内存对齐</span></button>
+              <button type="button" class="tab-btn" data-chapter="手册第3章" onclick="switchTopic(7)" aria-controls="lesson"><span class="tab-number" aria-hidden="true">08</span><span>Copy-and-Swap 强异常安全</span></button>
+              <button type="button" class="tab-btn" data-chapter="手册第3章" onclick="switchTopic(8)" aria-controls="lesson"><span class="tab-number" aria-hidden="true">09</span><span>值类别与完美转发 forward</span></button>
+              <button type="button" class="tab-btn" data-chapter="手册第4章" onclick="switchTopic(9)" aria-controls="lesson"><span class="tab-number" aria-hidden="true">10</span><span>对象切片 &amp; 菱形虚继承</span></button>
+            </section>
+            <section class="nav-group" aria-labelledby="navGroup2">
+              <h3 id="navGroup2">模板与现代类型<span>第 5—7 章</span></h3>
+              <button type="button" class="tab-btn" data-chapter="手册第5章" onclick="switchTopic(10)" aria-controls="lesson"><span class="tab-number" aria-hidden="true">11</span><span>模板实例化 &amp; if constexpr</span></button>
+              <button type="button" class="tab-btn" data-chapter="手册第5章" onclick="switchTopic(11)" aria-controls="lesson"><span class="tab-number" aria-hidden="true">12</span><span>Lambda 闭包类与捕获悬垂</span></button>
+              <button type="button" class="tab-btn" data-chapter="手册第6章" onclick="switchTopic(12)" aria-controls="lesson"><span class="tab-number" aria-hidden="true">13</span><span>vector 扩容与迭代器失效</span></button>
+              <button type="button" class="tab-btn" data-chapter="手册第6章" onclick="switchTopic(13)" aria-controls="lesson"><span class="tab-number" aria-hidden="true">14</span><span>erase-remove &amp; string_view</span></button>
+              <button type="button" class="tab-btn" data-chapter="手册第7章" onclick="switchTopic(14)" aria-controls="lesson"><span class="tab-number" aria-hidden="true">15</span><span>optional/variant 与异常重抛</span></button>
+            </section>
+            <section class="nav-group" aria-labelledby="navGroup3">
+              <h3 id="navGroup3">并发与工程<span>第 8—9 章</span></h3>
+              <button type="button" class="tab-btn" data-chapter="手册第8章" onclick="switchTopic(15)" aria-controls="lesson"><span class="tab-number" aria-hidden="true">16</span><span>thread 寿命与 jthread 停止</span></button>
+              <button type="button" class="tab-btn" data-chapter="手册第8章" onclick="switchTopic(16)" aria-controls="lesson"><span class="tab-number" aria-hidden="true">17</span><span>锁陷阱、死锁与 scoped_lock</span></button>
+              <button type="button" class="tab-btn" data-chapter="手册第8章" onclick="switchTopic(17)" aria-controls="lesson"><span class="tab-number" aria-hidden="true">18</span><span>条件变量谓词与队列关闭协议</span></button>
+              <button type="button" class="tab-btn" data-chapter="手册第8章" onclick="switchTopic(18)" aria-controls="lesson"><span class="tab-number" aria-hidden="true">19</span><span>atomic 内存序与 future 异常</span></button>
+              <button type="button" class="tab-btn" data-chapter="手册第9章" onclick="switchTopic(19)" aria-controls="lesson"><span class="tab-number" aria-hidden="true">20</span><span>分离编译 ODR 与 CMake 工程</span></button>
+            </section>
+        </nav>
+      </details>
+      <p class="sidebar-note">选择一个专题，从第一步开始。<br>先看代码，再观察状态如何变化。</p>
+    </aside>
+
+    <main class="lesson" id="lesson" tabindex="-1">
+      <div class="lesson-intro">
+        <div class="lesson-meta"><span class="eyebrow" id="topicNumber">专题 01 / 20</span><span class="dot" aria-hidden="true"></span><span class="chapter" id="topicChapter">核心 01</span></div>
+        <h2 id="topicTitle" tabindex="-1"></h2>
+        <p class="lesson-description">逐步阅读，亲手切换；把抽象概念变成看得见的过程。</p>
+      </div>
+
+      <div class="lesson-toolbar" aria-label="演示控制">
+        <div class="step-overview">
+          <div class="step-caption">当前步骤<span id="stepIndicator">1 / 4</span></div>
+          <div class="step-dots" id="stepDots" role="group" aria-label="跳转到指定步骤"></div>
+        </div>
+        <div class="speed-control">
+          <label for="speedSelect">播放速度</label>
+          <select class="speed-select" id="speedSelect" onchange="changeSpeed()">
+            <option value="3400">慢速 0.7x</option>
+            <option value="2400" selected>标准 1.0x</option>
+            <option value="1400">快速 1.7x</option>
+          </select>
+        </div>
+        <div class="controls">
+          <div class="controls-group">
+            <button type="button" class="btn secondary" id="prevBtn" onclick="prevStep()">← 上一步</button>
+            <button type="button" class="btn" id="nextBtn" onclick="nextStep()">下一步 →</button>
+          </div>
+          <div class="controls-group controls-play">
+            <button type="button" class="btn quiet" id="restartBtn" onclick="restartStep()" title="回到第 1 步">↺ 重新开始</button>
+            <button type="button" class="btn secondary" id="autoBtn" onclick="toggleAuto()" aria-pressed="false">▶ 自动播放</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="workspace">
+        <section class="card" aria-labelledby="codeHeading">
+          <div class="card-heading">
+            <span class="section-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-3-15-2 18"/></svg></span>
+            <div><h3 id="codeHeading">跟着代码看</h3><p>高亮行对应当前演示步骤</p></div>
+          </div>
+          <div class="analogy-box" id="topicAnalogy"></div>
+          <div class="code-label"><span>C++ · 代码示例</span><span id="currentLine"></span></div>
+          <div class="code-list" id="codeList" tabindex="0" role="region" aria-label="本专题代码，可滚动阅读"></div>
+        </section>
+
+        <section class="card" aria-labelledby="stageHeading">
+          <div class="card-heading">
+            <span class="section-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/><path d="M14 6h4v5M10 18H6v-5"/></svg></span>
+            <div><h3 id="stageHeading">观察状态变化</h3><p>内存、对象与编译行为的可视化示意</p></div>
+          </div>
+          <div class="stage-container" id="stageContainer"></div>
+          <div class="explain-section">
+            <div class="explain-label">这一步发生了什么</div>
+            <div class="explain-banner" id="stepExplain" role="status" aria-live="polite" aria-atomic="true"></div>
+          </div>
+        </section>
+      </div>
+      <p class="lesson-footnote">内存地址为示意。自动播放到本专题最后一步会停止，可随时暂停或点击步骤回看。</p>
+    </main>
+  </div>
+  <footer class="site-footer">C++ 动画学习室 · 让每一个难点，都有迹可循。</footer>
+
+  <script>
+    const topics = [
+      {
+        title: "① 栈 vs 堆与指针寻址（0.6 & 1.1 节）",
+        analogy: "💡 通俗比喻：<b>栈（Stack）</b>是自动退房的储物柜；<b>堆（Heap）</b>是远方租的大仓库；<b>指针 p</b> 是写着仓库地址的纸条；<b>引用 r</b> 是给原变量起的外号。",
+        code: [
+          "void demo() {",
+          "  int a = 42;             // 1. 栈上直接存值",
+          "  int* p = new int(99);   // 2. 堆上租仓库，栈存地址",
+          "  *p = 100;               // 3. 顺着纸条去仓库改数据",
+          "  // 若忘写 delete p; 直接结束函数 }",
+          "}"
+        ],
+        steps: [
+          {
+            line: 1,
+            explain: "步骤 1：执行 <code>int a = 42;</code> —— 在【栈内存】直接分配小格子（0x7ff0），里面直接装数值 42，速度极快。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 栈区 Stack（全自动管理）</div>
+                  <div class="mem-block show">
+                    <div class="addr">地址: 0x7ff0 (变量 a)</div>
+                    <div class="val" style="color:#32667a">int a = 42</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🏭 堆区 Heap（手动 new / delete）</div>
+                </div>
+              </div>`
+          },
+          {
+            line: 2,
+            explain: "步骤 2：执行 <code>int* p = new int(99);</code> —— 先在【堆区】租下 0x55a0 存入 99，再在【栈区】创建指针变量 p 存下地址纸条 0x55a0！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 栈区 Stack</div>
+                  <div class="mem-block show">
+                    <div class="addr">地址: 0x7ff0 (变量 a)</div>
+                    <div class="val" style="color:#32667a">int a = 42</div>
+                  </div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">地址: 0x7fe8 (指针变量 p)</div>
+                    <div class="val" style="color:#88601c">p = 0x55a0 (地址纸条)</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🏭 堆区 Heap</div>
+                  <div class="mem-block show" style="border-color:#356d50;margin-top:58px;">
+                    <div class="addr">堆地址: 0x55a0</div>
+                    <div class="val" style="color:#356d50">*p 数据 = 99</div>
+                  </div>
+                </div>
+              </div>
+              <svg class="svg-overlay" viewBox="0 0 700 360">
+                <path d="M 310 155 C 370 155, 370 140, 410 140" fill="none" stroke="#88601c" stroke-width="3" class="anim-arrow"/>
+              </svg>`
+          },
+          {
+            line: 3,
+            explain: "步骤 3：执行 <code>*p = 100;</code> —— 解引用（<code>*p</code>）：顺着纸条上的地址 0x55a0 飞到堆区仓库，把里面的 99 改成 100。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 栈区 Stack</div>
+                  <div class="mem-block show">
+                    <div class="addr">地址: 0x7ff0</div>
+                    <div class="val" style="color:#32667a">int a = 42</div>
+                  </div>
+                  <div class="mem-block show">
+                    <div class="addr">地址: 0x7fe8 (指针 p)</div>
+                    <div class="val" style="color:#356d50">p = 0x55a0</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🏭 堆区 Heap</div>
+                  <div class="mem-block show highlight" style="margin-top:58px;">
+                    <div class="addr">堆地址: 0x55a0</div>
+                    <div class="val" style="color:#88601c">*p 数据 = 100 (已修改!)</div>
+                  </div>
+                </div>
+              </div>
+              <svg class="svg-overlay" viewBox="0 0 700 360">
+                <path d="M 310 155 C 370 155, 370 140, 410 140" fill="none" stroke="#356d50" stroke-width="3.5" class="anim-arrow"/>
+              </svg>`
+          },
+          {
+            line: 5,
+            explain: "步骤 4：函数结束遇到 <code>}</code>！栈上的 a 和纸条 p 被自动清空，但堆上的 0x55a0 没人 delete，变成永远找不回来的【内存泄漏 Memory Leak】！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 栈区 Stack（已随函数返回自动清空）</div>
+                  <div class="mem-block moved show">
+                    <div class="addr">已回收</div>
+                    <div class="val">栈帧已销毁 (纸条 p 消失了)</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">🏭 堆区 Heap（警报：孤儿内存！）</div>
+                  <div class="mem-block leak show" style="margin-top:40px;">
+                    <div class="addr" style="color:#a54643">堆地址: 0x55a0 (无人指向)</div>
+                    <div class="val" style="color:#a54643">⚠️ 100 (内存泄漏 Memory Leak!)</div>
+                  </div>
+                </div>
+              </div>`
+          }
+        ]
+      },
+      {
+        title: "② 浅拷贝 vs 深拷贝 vs 移动语义 (3.2–3.5 节)",
+        analogy: "💡 通俗比喻：<b>浅拷贝</b>是只复印钥匙（两对象指同一块堆内存，先后析构会重复释放同一地址触发 UB）；<b>深拷贝</b>是重新盖房搬货；<b>移动语义</b>则是先由 <code>std::move</code> 转为右值引用，再由<b>移动构造函数</b>接管资源并将源指针置空！",
+        code: [
+          "// A. 若未写拷贝构造（默认浅拷贝）：两对象指向同一块 0x7700",
+          "{ BadBuf x(8); BadBuf y = x; } // 1~2. 析构 y 再析构 x -> 重复 delete[] 触发 UB！",
+          "Buffer a(1024);                // 3. 正确实现 Rule of 5：a 持有 0x8800",
+          "Buffer b = a;                  // 4. 深拷贝构造：b 新开 0x9900（a 仍持有 0x8800）",
+          "Buffer c = std::move(a);       // 5. std::move 转右值引用，移动构造接管 0x8800 并置空 a"
+        ],
+        steps: [
+          {
+            line: 0,
+            explain: "步骤 1（浅拷贝陷阱 - 共享同一资源）：若类只写了 <code>~BadBuf(){ delete[] data_; }</code> 却没写拷贝构造（违反 Rule of 3），<code>BadBuf y = x;</code> 只按成员复制指针，<code>x.data_</code> 和 <code>y.data_</code> 指向同一块堆内存 <code>0x7700</code>！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">📦 栈区对象（浅拷贝：两把钥匙开同一扇门）</div>
+                  <div class="mem-block show">
+                    <div class="addr">对象 x</div>
+                    <div class="val" style="color:#32667a">x.data_ = 0x7700</div>
+                  </div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">对象 y (默认按位浅拷贝)</div>
+                    <div class="val" style="color:#88601c">y.data_ = 0x7700 (同一地址!)</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">🏭 堆区内存（被两个对象同时当成独占资源）</div>
+                  <div class="mem-block show highlight" style="border-color:#a54643;margin-top:28px;">
+                    <div class="addr">0x7700 (仅此一份)</div>
+                    <div class="val" style="color:#a54643">[ 共享数组数据 ]</div>
+                  </div>
+                </div>
+              </div>
+              <svg class="svg-overlay" viewBox="0 0 700 360">
+                <path d="M 310 82 L 410 115" fill="none" stroke="#32667a" stroke-width="2.5" class="anim-arrow"/>
+                <path d="M 310 155 L 410 125" fill="none" stroke="#88601c" stroke-width="2.5" class="anim-arrow"/>
+              </svg>`
+          },
+          {
+            line: 1,
+            explain: "步骤 2（浅拷贝陷阱 - 第一次释放 → 第二次错误释放）：离开作用域时按逆序析构：① 先调 <code>~BadBuf()</code> 析构 <code>y</code>，释放 <code>0x7700</code>；② 紧接着析构 <code>x</code>，对<b>已释放的 <code>0x7700</code> 再次执行 <code>delete[]</code></b>（Double Free，触发未定义行为 UB）！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">📦 离开作用域：逆序析构 y → x</div>
+                  <div class="mem-block moved show">
+                    <div class="addr">① 先析构 y (~BadBuf)</div>
+                    <div class="val" style="color:#356d50">delete[] 0x7700 (第 1 次释放完成)</div>
+                  </div>
+                  <div class="mem-block leak show">
+                    <div class="addr">② 后析构 x (~BadBuf)</div>
+                    <div class="val" style="color:#a54643">💥 delete[] 0x7700 (对同一地址第 2 次释放 → UB!)</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">🏭 堆区 0x7700 状态</div>
+                  <div class="mem-block leak show" style="margin-top:28px;">
+                    <div class="addr">0x7700 (已被 y 释放归还系统)</div>
+                    <div class="val" style="color:#a54643">⚠️ 重复释放同一内存块（Double Free）！</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 2,
+            explain: "步骤 3（正确实现深拷贝与移动的 <code>Buffer</code>）：现在看遵守 Rule of 5 的 <code>Buffer</code>。首先构造对象 <code>a</code>，它在堆上独立持有 <code>0x8800</code>。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 栈区存活对象</div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">对象 a (新建)</div>
+                    <div class="val" style="color:#32667a">a.data_ = 0x8800, size_ = 1024</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🏭 堆区存活内存块</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">0x8800 (由 a 持有)</div>
+                    <div class="val" style="color:#356d50">[ a 的原始重型数据块 ]</div>
+                  </div>
+                </div>
+              </div>
+              <svg class="svg-overlay" viewBox="0 0 700 360">
+                <path d="M 310 85 L 410 85" fill="none" stroke="#32667a" stroke-width="3" class="anim-arrow"/>
+              </svg>`
+          },
+          {
+            line: 3,
+            explain: "步骤 4（深拷贝构造）：执行 <code>Buffer b = a;</code> —— 保留 <code>a</code> 和 <code>0x8800</code> 不变，拷贝构造函数为 <code>b</code> 在堆上<b>新分配 <code>0x9900</code></b> 并用 <code>std::copy_n</code> 复制数据，两对象各自独立！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 栈区存活对象 (a 与 b 均存活)</div>
+                  <div class="mem-block show retained">
+                    <div class="addr">对象 a (继续存活)</div>
+                    <div class="val" style="color:#32667a">a.data_ = 0x8800</div>
+                  </div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">对象 b (本步新增：深拷贝构造)</div>
+                    <div class="val" style="color:#88601c">b.data_ = 0x9900</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🏭 堆区存活内存块</div>
+                  <div class="mem-block show retained" style="border-color:#356d50">
+                    <div class="addr">0x8800 (仍由 a 持有)</div>
+                    <div class="val" style="color:#356d50">[ 原始数据块 ]</div>
+                  </div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">0x9900 (本步新分配并复制，由 b 持有)</div>
+                    <div class="val" style="color:#88601c">[ b 的独立副本 ]</div>
+                  </div>
+                </div>
+              </div>
+              <svg class="svg-overlay" viewBox="0 0 700 360">
+                <path d="M 310 82 L 410 82" fill="none" stroke="#32667a" stroke-width="2" opacity="0.6"/>
+                <path d="M 310 155 L 410 155" fill="none" stroke="#88601c" stroke-width="3" class="anim-arrow"/>
+              </svg>`
+          },
+          {
+            line: 4,
+            explain: "步骤 5（<code>std::move</code> 转换 + 移动构造接管）：执行 <code>Buffer c = std::move(a);</code> —— 注意：① <code>std::move(a)</code> 本身<b>不移动任何数据</b>，它只把左值 <code>a</code> 无条件转换为右值引用 <code>Buffer&&</code>；② 真正接管 <code>0x8800</code> 并把 <code>a.data_</code> 置为 <code>nullptr</code> 的是 <b><code>Buffer</code> 的移动构造函数</b>！此时对象 <code>b</code> 及其 <code>0x9900</code> 依然完好存活！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 栈区存活对象 (a, b, c 同在作用域内)</div>
+                  <div class="mem-block moved show">
+                    <div class="addr">对象 a (被 Buffer 移动构造函数置空)</div>
+                    <div class="val">a.data_ = nullptr, size_ = 0</div>
+                  </div>
+                  <div class="mem-block show retained">
+                    <div class="addr">对象 b (未受影响，继续存活)</div>
+                    <div class="val" style="color:#88601c">b.data_ = 0x9900</div>
+                  </div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">对象 c (本步移动构造接管 a 的资源)</div>
+                    <div class="val" style="color:#356d50">c.data_ = 0x8800 ⚡</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🏭 堆区存活内存块 (0x8800 与 0x9900 均在)</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">0x8800 (所有权已由 a 转移给 c)</div>
+                    <div class="val" style="color:#356d50">[ 原 0x8800 数据块（零拷贝） ]</div>
+                  </div>
+                  <div class="mem-block show retained">
+                    <div class="addr">0x9900 (仍由 b 稳稳持有)</div>
+                    <div class="val" style="color:#88601c">[ b 的独立副本 ]</div>
+                  </div>
+                </div>
+              </div>
+              <svg class="svg-overlay" viewBox="0 0 700 360">
+                <path d="M 310 150 L 410 155" fill="none" stroke="#88601c" stroke-width="2" opacity="0.55"/>
+                <path d="M 310 220 C 365 220, 365 82, 410 82" fill="none" stroke="#356d50" stroke-width="3.5" class="anim-arrow"/>
+              </svg>`
+          }
+        ]
+      },
+      {
+        title: "③ 智能指针：unique_ptr 转移、shared_ptr 计数与循环引用破解 (3.7–3.8)",
+        analogy: "💡 通俗比喻：<b>unique_ptr</b> 是独享产权证（不可复制，只能 <code>std::move</code> 过户）；<b>shared_ptr</b> 是合租记账本（归零退租）；若两对象用 <code>shared_ptr</code> 互相拉拽会形成<b>循环引用泄漏</b>，把回指链改成<b>weak_ptr</b> 观察员即可破局！",
+        code: [
+          "auto u1 = std::make_unique<int>(42); auto u2 = std::move(u1); // 1. 独占转移",
+          "auto s1 = std::make_shared<int>(100); auto s2 = s1; // 2. 共享计数为 2",
+          "// 3. 独立错误示例：两个成员都持有强引用（请勿作为正确代码运行）",
+          "struct BadNode { std::shared_ptr<BadNode> next, prev; };",
+          "{",
+          "  auto a = std::make_shared<BadNode>(); auto b = std::make_shared<BadNode>();",
+          "  a->next = b; b->prev = a; // A=2，B=2",
+          "} // b、a 依次析构后：A=1，B=1，资源泄漏",
+          "// 4–6. 独立修正版：回指成员替换为 weak_ptr，不保留原强回指",
+          "struct Node { std::shared_ptr<Node> next; std::weak_ptr<Node> prev; };",
+          "{ auto a = std::make_shared<Node>();",
+          "  { auto b = std::make_shared<Node>();",
+          "    a->next = b; b->prev = a; // 4. A=1，B=2",
+          "    if (auto sp = b->prev.lock()) {} // 临时提升 A：1→2→1",
+          "  } // 5. 外部 b 析构：B 由 2→1，A.next 仍持有 B",
+          "} // 6. 外部 a 析构：A 归零；释放 A.next 后 B 也归零"
+        ],
+        steps: [
+          {
+            line: 0,
+            explain: "步骤 1（<code>unique_ptr</code> 独占与所有权转移）：<code>u1</code> 独占堆上 <code>int(42)</code>（禁止拷贝构造）。执行 <code>auto u2 = std::move(u1);</code> 后，<code>u2</code> 移动构造接管 <code>0x5100</code>，<code>u1</code> 自动变为 <code>nullptr</code>，零额外控制块开销！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 栈区 unique_ptr（独占所有权转移）</div>
+                  <div class="mem-block moved show">
+                    <div class="addr">unique_ptr u1 (移交后置空)</div>
+                    <div class="val">u1 = nullptr</div>
+                  </div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">unique_ptr u2 (接管所有权)</div>
+                    <div class="val" style="color:#356d50">u2 = 0x5100 ⚡</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🏭 堆区资源（无控制块开销）</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50;margin-top:28px;">
+                    <div class="addr">0x5100 (仅由 u2 唯一持有)</div>
+                    <div class="val" style="color:#356d50">int 值 = 42</div>
+                  </div>
+                </div>
+              </div>
+              <svg class="svg-overlay" viewBox="0 0 700 360">
+                <path d="M 310 155 L 410 120" fill="none" stroke="#356d50" stroke-width="3" class="anim-arrow"/>
+              </svg>`
+          },
+          {
+            line: 1,
+            explain: "步骤 2（<code>shared_ptr</code> 引用计数控制块）：<code>s1</code> 与 <code>s2</code> 共享同一个堆对象，控制块中的强引用计数 <code>use_count</code> 变为 <b>2</b>（此时上一步的 <code>u2</code> 仍在栈上存活）。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 栈区智能指针</div>
+                  <div class="mem-block show retained">
+                    <div class="addr">unique_ptr u2 (继续存活)</div>
+                    <div class="val" style="color:#356d50">u2 ──▶ 0x5100 (42)</div>
+                  </div>
+                  <div class="mem-block show">
+                    <div class="addr">shared_ptr s1</div>
+                    <div class="val" style="color:#32667a">强引用 #1</div>
+                  </div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">shared_ptr s2 (拷贝自 s1)</div>
+                    <div class="val" style="color:#32667a">强引用 #2</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🏭 堆区：控制块 + 共享对象</div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">Control Block (原子记账本)</div>
+                    <div class="val" style="color:#88601c">use_count = 2 | weak_count = 0</div>
+                  </div>
+                  <div class="mem-block show" style="border-color:#356d50">
+                    <div class="addr">int 共享实例（值为 100）</div>
+                    <div class="val" style="color:#356d50">当 use_count 归 0 时自动释放</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 7,
+            explain: "步骤 3（独立错误示例）：<code>BadNode::next</code> 与 <code>BadNode::prev</code> 都是 <code>shared_ptr</code>。建立双向连接后，A 与 B 各有一个外部拥有者和一个成员拥有者，强计数均为 2。退出作用域时先析构外部 <code>b</code>（B：2→1），再析构外部 <code>a</code>（A：2→1）；两个节点仍互相拥有，均无法销毁。下一步将切换到一段独立的修正版代码。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">📦 栈指针 a, b 已销毁离开作用域</div>
+                  <div class="mem-block moved show">
+                    <div class="addr">栈上 shared_ptr a, b 已析构</div>
+                    <div class="val">外部已无任何指针指向堆上节点</div>
+                  </div>
+                  <div class="mem-block leak show">
+                    <div class="addr">所有权环诊断</div>
+                    <div class="val" style="color:#a54643">A.next 与 B.prev 互相持有，强计数均为 1，资源无法自动释放！</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">🏭 堆区：双向 shared_ptr 循环引用泄漏</div>
+                  <div class="mem-block leak show">
+                    <div class="addr">Node A (use_count = 1，被 B.prev 拽住)</div>
+                    <div class="val" style="color:#a54643">A.next (shared_ptr) ──▶ 指向 Node B</div>
+                  </div>
+                  <div class="mem-block leak show">
+                    <div class="addr">Node B (use_count = 1，被 A.next 拽住)</div>
+                    <div class="val" style="color:#a54643">B.prev (shared_ptr) ──▶ 指向 Node A</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 12,
+            explain: "步骤 4（独立修正版，建立连接）：<code>Node</code> 只保留 <code>shared_ptr next</code> 和 <code>weak_ptr prev</code>，不再有强回指成员。外部 <code>a</code> 单独拥有 A，所以 A 的强计数为 1；外部 <code>b</code> 与 <code>A.next</code> 同时拥有 B，所以 B 的强计数为 2。下一行 <code>lock()</code> 成功时，局部 <code>sp</code> 暂时使 A 的强计数变成 2；空 <code>if</code> 块结束后恢复为 1。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 外部 a、b 均存活</div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">外层 shared_ptr a</div>
+                    <div class="val" style="color:#32667a">a 拥有 Node A（强计数 1）</div>
+                  </div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">内层 shared_ptr b</div>
+                    <div class="val" style="color:#32667a">b 与 A.next 共同拥有 Node B（强计数 2）</div>
+                  </div>
+                  <div class="mem-block show" style="border-color:#735887">
+                    <div class="addr">下一行临时访问：if (auto sp = b-&gt;prev.lock()) {}</div>
+                    <div class="val" style="color:#735887">A 强计数 1 → 2 → 1；sp 在 if 块结束时析构</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">✅ 成员类型已替换，无强回指</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">Node A：由外部 a 拥有</div>
+                    <div class="val" style="color:#356d50">A.next（shared_ptr）拥有 Node B</div>
+                  </div>
+                  <div class="mem-block show" style="border-color:#735887">
+                    <div class="addr">Node B：由外部 b 与 A.next 拥有</div>
+                    <div class="val" style="color:#735887">B.prev（weak_ptr）观察 A，不增加强计数</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 14,
+            explain: "步骤 5（退出内层作用域）：局部 <code>sp</code> 已在上一行的 <code>if</code> 块结束时析构；现在内层的外部拥有者 <code>b</code> 析构，使 B 的强计数从 2 降至 1。B 此时仍由 <code>A.next</code> 拥有，因此不会提前销毁。外层 <code>a</code> 仍存活，A 的强计数保持为 1。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 外层 a 存活，内层 b 已析构</div>
+                  <div class="mem-block show retained">
+                    <div class="addr">shared_ptr a（外层作用域）</div>
+                    <div class="val" style="color:#32667a">继续拥有 Node A</div>
+                  </div>
+                  <div class="mem-block moved show">
+                    <div class="addr">shared_ptr b（内层作用域已结束）</div>
+                    <div class="val">已释放一份 B 的共享所有权</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🏭 两个节点仍存活</div>
+                  <div class="mem-block show retained">
+                    <div class="addr">Node A：强计数 1（外部 a）</div>
+                    <div class="val" style="color:#356d50">A.next 继续拥有 B</div>
+                  </div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">Node B：强计数 2 → 1（仅 A.next）</div>
+                    <div class="val" style="color:#88601c">B.prev 仍弱观察 A；B 尚未析构</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 15,
+            explain: "步骤 6（退出外层作用域）：外部 <code>a</code> 析构，使 A 的强计数由 1 归零，开始销毁 A。销毁其成员 <code>A.next</code> 时，B 的强计数也由 1 归零，开始销毁 B；<code>B.prev</code> 随 B 析构，不会保活 A。两个节点最终都完成析构。这里展示的是修正版自己的对象，并非在已泄漏的错误示例上追加一个弱指针。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🧹 外部拥有者按作用域顺序退出</div>
+                  <div class="mem-block moved show">
+                    <div class="addr">内层 b 已在上一步析构</div>
+                    <div class="val">不再持有 Node B</div>
+                  </div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">本步：外层 a 析构</div>
+                    <div class="val" style="color:#356d50">A 的最后一份强引用释放：1 → 0</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">✅ Node A 与 Node B 均完成析构</div>
+                  <div class="mem-block show" style="border-color:#356d50">
+                    <div class="addr">A 开始销毁，并释放成员 A.next</div>
+                    <div class="val" style="color:#356d50">B 的最后一份强引用释放：1 → 0</div>
+                  </div>
+                  <div class="mem-block show" style="border-color:#356d50">
+                    <div class="addr">B 开始销毁，并释放弱成员 B.prev</div>
+                    <div class="val" style="color:#356d50">弱回指不阻止析构，两个节点均已清理</div>
+                  </div>
+                </div>
+              </div>`
+          }
+        ]
+      },
+      {
+        title: "④ 虚函数与多态寻址 vptr & vtable (4.2–4.5 节)",
+        analogy: "💡 通俗比喻：基类指针 <code>Shape* s</code> 像点菜员，子类对象肚子里藏着菜单导航卡 <code>vptr</code>，指向该物种专属的技能表 <code>vtable</code>。",
+        code: [
+          "Shape* s = new Circle(2.0); // 1. Circle 头部自动植入 vptr",
+          "s->area();                  // 2. 查 vptr -> Circle::vtable[0]",
+          "delete s;                   // 3. 查虚析构槽位 -> 先拆子类再拆基类"
+        ],
+        steps: [
+          {
+            line: 0,
+            explain: "步骤 1：<code>new Circle(2.0)</code> 创建派生类对象时，对象头部包含隐藏的 <code>vptr</code>，指向 <code>Circle</code> 的虚函数表 <code>vtable</code>。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#88601c">📦 栈指针 &amp; 堆上 Circle 对象</div>
+                  <div class="mem-block show">
+                    <div class="addr">栈上基类指针 s</div>
+                    <div class="val" style="color:#88601c">Shape* s = 0x6000</div>
+                  </div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">堆 0x6000 (Circle 对象完整布局)</div>
+                    <div class="val" style="color:#735887">[隐藏] vptr ──▶ Circle::vtable</div>
+                    <div class="val" style="color:#5f6e65">double r_ = 2.0</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#735887">📜 只读段：Circle 的 vtable</div>
+                  <div class="mem-block show" style="border-color:#735887">
+                    <div class="addr">槽位 [0] (override)</div>
+                    <div class="val" style="color:#356d50">&amp;Circle::area() (3.14 * r * r)</div>
+                  </div>
+                  <div class="mem-block show" style="border-color:#735887">
+                    <div class="addr">槽位 [1]</div>
+                    <div class="val" style="color:#32667a">&amp;Circle::~Circle() (虚析构)</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 1,
+            explain: "步骤 2：调用 <code>s-&gt;area()</code> 触发【运行期动态分派】—— 栈指针 <code>s</code> 与堆上 <code>Circle</code> 对象保持不变，CPU 顺着 <code>s (0x6000) -&gt; vptr -&gt; Circle::vtable[0]</code> 查表命中 <code>Circle::area()</code>，算出 12.566！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#88601c">📦 栈指针 &amp; 堆上 Circle 对象（寻址中）</div>
+                  <div class="mem-block show retained">
+                    <div class="addr">第 1 跳：解引用基类指针 s</div>
+                    <div class="val" style="color:#88601c">Shape* s = 0x6000</div>
+                  </div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">第 2 跳：读取 0x6000 对象头部 vptr</div>
+                    <div class="val" style="color:#735887">vptr ──▶ 查 Circle::vtable[0]</div>
+                    <div class="val" style="color:#5f6e65">double r_ = 2.0 (作为 this-&gt;r_ 传入)</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">📜 只读段 Circle::vtable（命中槽位 0）</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">槽位 [0] 命中并调用！</div>
+                    <div class="val" style="color:#356d50">⚡ 执行 Circle::area() ──▶ 返回 12.566</div>
+                  </div>
+                  <div class="mem-block show retained" style="border-color:#735887">
+                    <div class="addr">槽位 [1] (未调用)</div>
+                    <div class="val" style="color:#32667a">&amp;Circle::~Circle()</div>
+                  </div>
+                </div>
+              </div>
+              <svg class="svg-overlay" viewBox="0 0 700 360">
+                <path d="M 310 160 C 365 160, 365 85, 410 85" fill="none" stroke="#356d50" stroke-width="3.5" class="anim-arrow"/>
+              </svg>`
+          },
+          {
+            line: 2,
+            explain: "步骤 3：执行 <code>delete s;</code> —— 顺着 <code>vptr</code> 查表命中槽位 [1] <code>~Circle()</code>，先清理派生类 <code>Circle</code>，再自动调用基类 <code>~Shape()</code> 并释放 <code>0x6000</code>；若基类析构函数非虚，经由基类指针 <code>delete</code> 派生类对象将触发未定义行为 (UB)！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 栈与堆对象状态（执行虚析构）</div>
+                  <div class="mem-block show retained">
+                    <div class="addr">栈上指针 s</div>
+                    <div class="val" style="color:#88601c">delete s (目标: 0x6000)</div>
+                  </div>
+                  <div class="mem-block moved show">
+                    <div class="addr">堆 0x6000 (Circle 对象已完整析构释放)</div>
+                    <div class="val" style="color:#356d50">① ~Circle() ──▶ ② ~Shape() ──▶ 释放内存</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">⚠️ 4.5 节铁律对比：若 ~Shape() 不是 virtual？</div>
+                  <div class="mem-block show highlight" style="border-color:#32667a">
+                    <div class="addr">当前情况：virtual ~Shape() = default;</div>
+                    <div class="val" style="color:#356d50">✅ 命中 vtable[1]，派生类与基类完整析构</div>
+                  </div>
+                  <div class="mem-block leak show">
+                    <div class="addr">反例：若基类析构非虚</div>
+                    <div class="val" style="color:#a54643">❌ delete s 触发未定义行为 (UB，可能泄漏或损坏堆)！</div>
+                  </div>
+                </div>
+              </div>`
+          }
+        ]
+      },
+      {
+        title: "⑤ RAII 全自动资源生命周期 (3.1 节 FileGuard)",
+        analogy: "💡 通俗比喻：把需要手动关闭的危险资源（文件 <code>FILE*</code>、锁、堆内存）绑在<b>栈上保姆对象</b>身上。无论正常退出、提前 return 还是抛异常栈展开，保姆必调析构函数清理！",
+        code: [
+          "void readFile(const char* path, bool stop) {",
+          "  FileGuard file(path);         // 1. 构造：fopen 打开文件",
+          "  if (stop) return;             // 2. 提前 return 或抛异常！",
+          "} // 3. 栈展开自动调用 ~FileGuard() -> fclose(f_)"
+        ],
+        steps: [
+          {
+            line: 1,
+            explain: "步骤 1：<code>FileGuard file(path);</code> 在栈上构造，构造函数内调用 <code>std::fopen</code> 获取文件句柄。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 栈区 RAII 对象</div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">栈对象 file 构造完成</div>
+                    <div class="val" style="color:#32667a">file.f_ = 0x7010 (FILE*)</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">📂 操作系统文件句柄</div>
+                  <div class="mem-block show" style="border-color:#88601c">
+                    <div class="addr">句柄 0x7010</div>
+                    <div class="val" style="color:#88601c">📂 状态：OPEN (文件已打开)</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 2,
+            explain: "步骤 2：遇到 <code>if (stop) return;</code> 或中途抛出异常！在 C 语言里如果忘了在每个 return 前写 <code>fclose</code> 就会泄漏句柄。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">⚡ 提前退出 / 异常栈展开</div>
+                  <div class="mem-block leak show">
+                    <div class="addr">控制流即将离开作用域</div>
+                    <div class="val" style="color:#88601c">C++ 自动触发栈对象析构！</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">📂 准备清理</div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">C++ 铁律</div>
+                    <div class="val" style="color:#32667a">已完整构造的自动对象必析构</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 3,
+            explain: "步骤 3：<code>~FileGuard()</code> 自动执行 <code>std::fclose(f_)</code>，文件句柄 100% 安全关闭！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 栈区 RAII 对象</div>
+                  <div class="mem-block moved show">
+                    <div class="addr">~FileGuard() 析构完成</div>
+                    <div class="val" style="color:#356d50">栈帧清理完毕</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">📂 操作系统文件句柄</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">句柄 0x7010</div>
+                    <div class="val" style="color:#356d50">✅ 状态：CLOSED (已自动关闭!)</div>
+                  </div>
+                </div>
+              </div>`
+          }
+        ]
+      },
+      {
+        title: "⑥ [手册第0-1章] const 指针双锁 & 引用延寿 vs 悬垂陷阱",
+        analogy: "💡 手册 0.5 & 1.8 核心：<code>const</code> 修饰指针<b>以 * 为界从右往左读</b>（看锁头挂在指针上还是目标盒子上）；<code>const T&</code> 直接绑定临时量可延寿，但经函数返回引用不再延寿！",
+        code: [
+          "const int* p1 = &x;              // 1. 锁目标(*p1只读)，p1可换绑",
+          "int* const p2 = &x;              // 2. 锁指针(p2不可换绑)，*p2可改",
+          "const string& ok = string(\"A\");  // 3. 直接绑定：临时对象延寿！",
+          "const auto& bad = echo(string(\"A\")); // 4. 经函数返回引用：当场悬垂！"
+        ],
+        steps: [
+          {
+            line: 0,
+            explain: "步骤 1：<code>const int* p1 = &x;</code>（从右往左读：p1 是指针 → 指向 const int）。锁头挂在【目标盒子】上：不能改 <code>*p1</code>，但 <code>p1 = &y</code> 可以换绑！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">🔓 指针变量 p1（未上锁）</div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">const int* p1</div>
+                    <div class="val" style="color:#356d50">🔓 p1 = &amp;y (允许换绑指向!)</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">🔒 目标访问路径（已上锁）</div>
+                  <div class="mem-block leak show">
+                    <div class="addr">通过 *p1 访问 x</div>
+                    <div class="val" style="color:#a54643">🔒 *p1 = 99 (编译报错：只读!)</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 1,
+            explain: "步骤 2：<code>int* const p2 = &x;</code>（从右往左读：p2 是 const 指针 → 指向 int）。锁头挂在【指针 p2 自己】身上：终身不能换绑，但可以改 <code>*p2 = 99</code>！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">🔒 指针变量 p2（已锁死）</div>
+                  <div class="mem-block leak show">
+                    <div class="addr">int* const p2</div>
+                    <div class="val" style="color:#a54643">🔒 p2 = &amp;y (编译报错：不可换绑!)</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🔓 目标访问路径（未上锁）</div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">通过 *p2 访问 x</div>
+                    <div class="val" style="color:#356d50">🔓 *p2 = 99 (合法修改目标值!)</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 2,
+            explain: "步骤 3（手册 1.8 节）：<code>const string& ok = string(\"A\");</code> —— <code>const</code> 引用<b>直接绑定</b>纯右值临时对象，C++ 特殊规则将该临时对象延寿到与 <code>ok</code> 同生命周期！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 局部引用 ok</div>
+                  <div class="mem-block show">
+                    <div class="addr">const string&amp; ok</div>
+                    <div class="val" style="color:#32667a">直接绑定临时对象</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">⏳ 临时对象生命周期</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">string("A") 临时对象</div>
+                    <div class="val" style="color:#356d50">✅ 成功延寿！与 ok 一起活到作用域结束</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 3,
+            explain: "步骤 4（手册 1.8 节高危坑）：<code>const auto& bad = echo(string(\"A\"));</code> —— 临时对象绑在函数参数上，二次返回引用<b>不会传递延寿</b>！分号一过临时对象立即销毁，<code>bad</code> 变悬垂引用！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">📦 局部引用 bad</div>
+                  <div class="mem-block leak show">
+                    <div class="addr">const string&amp; bad</div>
+                    <div class="val" style="color:#a54643">⚠️ 指向已销毁内存 (悬垂引用 UB!)</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">💥 完整表达式结束（遇到分号 ;）</div>
+                  <div class="mem-block moved show">
+                    <div class="addr">string("A") 临时对象</div>
+                    <div class="val" style="color:#a54643">❌ 分号处当场析构销毁！延寿不跨函数传递</div>
+                  </div>
+                </div>
+              </div>`
+          }
+        ]
+      },
+      {
+        title: "⑦ [手册第2章] 成员初始化声明顺序坑 & 对象内存布局",
+        analogy: "💡 手册 2.3 & 2.8 核心：成员初始化顺序<b>永远只看它们在 class 里的声明顺序</b>，与初始化列表怎么排无关！对本例而言，仅调整列表顺序仍会读未构造的 <code>s_</code>，必须<b>调整成员声明顺序</b>或<b>直接用构造参数 <code>v.size()</code> 初始化 <code>len_</code></b>！",
+        code: [
+          "class Bad {",
+          "  int len_;         // 声明排第 1 -> 永远第 1 个初始化！",
+          "  std::string s_;   // 声明排第 2 -> 永远第 2 个初始化！",
+          "public:",
+          "  Bad(string v) : s_(v), len_(s_.size()) {} // ❌ 先算 len_ 时 s_ 尚未构造！",
+          "  // 修复①: 先声明 string s_; 再声明 int len_;",
+          "  // 修复②: 直接用参数初始化 : len_(v.size()), s_( std::move(v) )"
+        ],
+        steps: [
+          {
+            line: 4,
+            explain: "步骤 1：进入初始化列表 <code>: s_(v), len_(s_.size())</code>。虽然 <code>s_(v)</code> 写在前面，但编译器强制按【类中声明顺序】先初始化排第 1 的 <code>len_</code>！此时调用 <code>s_.size()</code> 访问了尚未构造的 <code>s_</code>，触发未定义行为（UB）！注意：<b>若仅把列表改成 <code>: len_(s_.size()), s_(v)</code> 依然会访问未构造的 <code>s_</code>，并不能修复 bug</b>！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">⚠️ 实际第 1 步：初始化 len_ (按声明顺序)</div>
+                  <div class="mem-block leak show">
+                    <div class="addr">偏移 0: int len_ (声明排第 1)</div>
+                    <div class="val" style="color:#a54643">求值 s_.size() ──▶ 💥 此时 s_ 尚未构造 (UB)！</div>
+                  </div>
+                  <div class="mem-block moved show">
+                    <div class="addr">常见误区警告</div>
+                    <div class="val" style="color:#a54643">仅调整初始化列表顺序仍会先读未构造的 s_！</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#5f6e65">⏳ 尚处于未构造状态的 s_</div>
+                  <div class="mem-block moved show">
+                    <div class="addr">偏移 8: std::string s_ (声明排第 2)</div>
+                    <div class="val">❌ 生命周期尚未开始（访问它是未定义行为 UB）</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 5,
+            explain: "步骤 2：两种真正有效的修复方法 —— <b>修复 ①</b>：在类中先声明 <code>std::string s_;</code>，再声明 <code>int len_;</code>；<b>修复 ②</b>：不依赖成员 <code>s_</code>，直接用构造函数形参初始化 <code>len_(static_cast&lt;int&gt;(v.size()))</code>！（同时让初始化列表顺序与声明顺序保持一致以消除编译器警告）。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">✅ 两种正确修复方案</div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">方案 ①：调整成员声明顺序</div>
+                    <div class="val" style="color:#356d50">先声明 string s_; 再声明 int len_;</div>
+                  </div>
+                  <div class="mem-block show highlight" style="border-color:#32667a">
+                    <div class="addr">方案 ②：直接用构造参数 v 初始化</div>
+                    <div class="val" style="color:#32667a">: len_(v.size()), s_(std::move(v))</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📐 2.8 节：对象内存里到底有什么？</div>
+                  <div class="mem-block show">
+                    <div class="addr">对象内部 (计入 sizeof)</div>
+                    <div class="val" style="color:#32667a">非静态数据成员 + 字节对齐 Padding (+ vptr)</div>
+                  </div>
+                  <div class="mem-block show" style="border-color:#735887">
+                    <div class="addr">对象外部 (不占 sizeof)</div>
+                    <div class="val" style="color:#735887">成员函数(代码段) + static变量(静态区)</div>
+                  </div>
+                </div>
+              </div>`
+          }
+        ]
+      },
+      {
+        title: "⑧ [手册第3章] Copy-and-Swap 强异常安全赋值 (3.11 节)",
+        analogy: "💡 手册 3.11 节 Buffer 精髓：拷贝赋值如果先 <code>delete[]</code> 旧内存再 <code>new</code> 新内存，一旦 <code>new</code> 抛异常，原对象就毁了！<b>Copy-and-Swap</b> 先造局部副本，再通过 <code>noexcept</code> 交换指针，最后让副本析构自动带走旧内存！",
+        code: [
+          "Buffer& operator=(const Buffer& other) {",
+          "  if (this != &other) {",
+          "    Buffer copy(other); // 1. 先在旁边造副本（若抛异常，*this 毫发无损）",
+          "    swap(copy);         // 2. noexcept 交换指针（不允许异常向外传播）",
+          "  }                     // 3. copy 离开作用域，自动 delete[] 旧内存！",
+          "  return *this;",
+          "}"
+        ],
+        steps: [
+          {
+            line: 2,
+            explain: "步骤 1：执行 <code>Buffer copy(other);</code> —— 先不动 <code>*this</code> 原有的 <code>0x1100</code>，在栈上构造局部副本 <code>copy</code> 分配新内存 <code>0x2200</code>。若此时内存不足抛 <code>std::bad_alloc</code>，<code>*this</code> 的 <code>0x1100</code> 状态完好如初（达成<b>强异常安全保证</b>）！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 栈区对象 (*this 与局部 copy)</div>
+                  <div class="mem-block show">
+                    <div class="addr">当前对象 *this (原封未动)</div>
+                    <div class="val" style="color:#32667a">this-&gt;data_ = 0x1100</div>
+                  </div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">局部副本对象 copy (本步新构造)</div>
+                    <div class="val" style="color:#88601c">copy.data_ = 0x2200</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🏭 堆区内存块 (新旧并存)</div>
+                  <div class="mem-block show">
+                    <div class="addr">0x1100 (旧数据，仍由 *this 持有)</div>
+                    <div class="val" style="color:#32667a">[ *this 原有旧数据 ]</div>
+                  </div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">0x2200 (新分配，由 copy 持有)</div>
+                    <div class="val" style="color:#88601c">[ other 的深拷贝副本 ]</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 3,
+            explain: "步骤 2：执行 <code>swap(copy); noexcept</code> —— 仅交换两个对象的内置指针和大小成员。注意：<code>noexcept</code> 承诺<b>不允许异常向外传播</b>（若异常逃出 <code>noexcept</code> 函数将直接调用 <code>std::terminate</code>）。交换后 <code>*this</code> 指向新数据 <code>0x2200</code>，局部对象 <code>copy</code> 接管旧数据 <code>0x1100</code>。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">📦 栈区对象（指针已完成互换）</div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">当前对象 *this (已换上新指针)</div>
+                    <div class="val" style="color:#356d50">this-&gt;data_ = 0x2200 ⚡</div>
+                  </div>
+                  <div class="mem-block show" style="border-color:#735887">
+                    <div class="addr">局部对象 copy (接盘旧指针)</div>
+                    <div class="val" style="color:#735887">copy.data_ = 0x1100</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🏭 堆区内存块（两块均在，归属互换）</div>
+                  <div class="mem-block show" style="border-color:#735887">
+                    <div class="addr">0x1100 (现归局部 copy 持有)</div>
+                    <div class="val" style="color:#735887">[ 待清理的旧数据 ]</div>
+                  </div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">0x2200 (现归 *this 持有)</div>
+                    <div class="val" style="color:#356d50">[ other 的深拷贝副本 ]</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 4,
+            explain: "步骤 3：遇到右花括号 <code>}</code>，局部对象 <code>copy</code> 离开作用域自动执行 <code>~Buffer()</code>，把换给它的旧内存 <code>0x1100</code> 安全 <code>delete[]</code> 掉，而 <code>*this</code> 与 <code>0x2200</code> 稳稳保留！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">📦 栈区对象（copy 析构退出）</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">当前对象 *this (继续存活)</div>
+                    <div class="val" style="color:#356d50">this-&gt;data_ = 0x2200</div>
+                  </div>
+                  <div class="mem-block moved show">
+                    <div class="addr">局部对象 copy (已离开作用域析构)</div>
+                    <div class="val">~Buffer() 已执行 delete[] 0x1100</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🏭 堆区内存块（旧内存已释放）</div>
+                  <div class="mem-block moved show">
+                    <div class="addr">0x1100 (已由 ~Buffer 释放)</div>
+                    <div class="val" style="color:#356d50">✅ 旧内存已安全回收</div>
+                  </div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">0x2200 (由 *this 稳稳持有)</div>
+                    <div class="val" style="color:#356d50">✅ [ 新副本数据完好 ]</div>
+                  </div>
+                </div>
+              </div>`
+          }
+        ]
+      },
+      {
+        title: "⑨ [手册第3章] 值类别与完美转发 std::forward (3.9 节)",
+        analogy: "💡 手册 3.9 节核心痛点：哪怕函数参数声明成 <code>T&& value</code>，<b>一旦它有了名字 <code>value</code>，在函数体内写 <code>value</code> 就变成了左值！</b>必须用 <code>std::forward&lt;T&gt;(value)</code> 把原来的左/右值通行证原样转发。",
+        code: [
+          "template<class T>",
+          "void relay(T&& value) {             // 转发引用（万能引用）",
+          "  // consume(value);                // ❌ 错！具名 value 永远是左值",
+          "  consume(std::forward<T>(value));  // ✅ 还原调用者的左/右值属性",
+          "}",
+          "relay(s);            // 1. 传左值 s -> T 推导为 string&",
+          "relay(std::move(s)); // 2. 传右值   -> T 推导为 string"
+        ],
+        steps: [
+          {
+            line: 5,
+            explain: "步骤 1：调用 <code>relay(s)</code> 传入左值 —— 模板参数推导 <code>T = string&amp;</code>，引用折叠后形参类型为 <code>string&amp;</code>。<code>std::forward&lt;T&gt;(value)</code> 保持左值属性，选择 <code>consume(const string&amp;)</code> 重载：通过 const 左值引用只读借用原对象，绑定引用本身不复制字符串。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📥 调用：relay(s) 传入左值</div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">模板推导与引用折叠 (&amp; 遇上 &amp;&amp; 得 &amp;)</div>
+                    <div class="val" style="color:#32667a">T = std::string&amp;</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">📤 std::forward&lt;T&gt;(value) 结果</div>
+                  <div class="mem-block show">
+                    <div class="addr">保持左值属性 (lvalue)</div>
+                    <div class="val" style="color:#356d50">命中 consume(const string&amp;) 只读借用</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 6,
+            explain: "步骤 2：调用 <code>relay(std::move(s))</code> 传入右值（将亡值 xvalue）—— 若不用 <code>forward</code> 直接写 <code>consume(value)</code>，因为具名变量 <code>value</code> 是左值，右值属性会丢失！加上 <code>std::forward&lt;T&gt;(value)</code> 才能还原为右值！ 此处选择 <code>consume(string&amp;&amp;)</code> 右值引用重载；绑定该引用本身也不搬移数据，是否转移资源取决于函数体中的操作。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#88601c">📥 调用：relay(std::move(s)) 传入右值</div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">模板推导与引用折叠 (&amp;&amp; 遇上 &amp;&amp; 得 &amp;&amp;)</div>
+                    <div class="val" style="color:#88601c">T = std::string (value 类型为 string&amp;&amp;)</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">📤 std::forward&lt;T&gt;(value) 结果</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">还原为右值 (xvalue) ⚡</div>
+                    <div class="val" style="color:#356d50">命中 consume(string&amp;&amp;) 右值引用重载；绑定本身不搬移</div>
+                  </div>
+                </div>
+              </div>`
+          }
+        ]
+      },
+      {
+        title: "⑩ [手册第4章] 对象切片 (Object Slicing) & 菱形虚继承 (4.6 & 4.10)",
+        analogy: "💡 手册 4.6 & 4.10 核心：把派生类对象<b>按值</b>赋给基类变量 <code>Base b = d;</code>，超出基类大小的派生类部分会被一刀切掉；而菱形继承中若不加 <code>virtual</code>，派生类体内会塞进两份重复的顶层基类子对象！",
+        code: [
+          "Derived d; Base b = d;                 // 1. ❌ 按值拷贝发生对象切片 (d 本身仍存活)",
+          "Base& ref = d; // 2a. 借用现有局部对象 d，不接管所有权",
+          "std::unique_ptr<Base> p = std::make_unique<Derived>(); // 2b. 拥有另一个动态对象；Base 需虚析构",
+          "struct Left : A {}; struct Right : A {}; struct BadDiamond : Left, Right {}; // 3. ❌ 两份 A 子对象",
+          "struct Left : virtual A {}; struct Right : virtual A {}; // 4. ✅ 虚继承共享唯一 A 子对象"
+        ],
+        steps: [
+          {
+            line: 0,
+            explain: "步骤 1（对象切片 Object Slicing）：原对象 <code>Derived d</code> 依然完整存活在栈上；但执行 <code>Base b = d;</code>（按值拷贝）时，新对象 <code>b</code> 只有 <code>sizeof(Base)</code> 大小，<code>Derived</code> 独有成员被切掉丢弃，且 <code>b.vptr</code> 被设为 <code>Base::vtable</code>！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 原对象 Derived d（完整存活）</div>
+                  <div class="mem-block show retained">
+                    <div class="addr">d 的 Base 子对象部分</div>
+                    <div class="val" style="color:#32667a">d.vptr ──▶ Derived::vtable | Base 成员</div>
+                  </div>
+                  <div class="mem-block show retained">
+                    <div class="addr">d 的 Derived 扩展部分</div>
+                    <div class="val" style="color:#735887">Derived 独有数据成员 (完好)</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">🔪 按值拷贝出的新对象 Base b（已切片!）</div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">b 的内存盒子 (仅 sizeof(Base))</div>
+                    <div class="val" style="color:#88601c">b.vptr ──▶ 退回 Base::vtable！</div>
+                  </div>
+                  <div class="mem-block leak show">
+                    <div class="addr">被切除部分 (未复制到 b)</div>
+                    <div class="val" style="color:#a54643">✂️ Derived 独有成员丢失（vector&lt;Base&gt; 同理）</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 2,
+            explain: "步骤 2（分别演示借用与拥有）：<code>Base&amp; ref = d;</code> 借用现有局部对象 <code>d</code>，不会接管其所有权；<code>std::unique_ptr&lt;Base&gt; p = std::make_unique&lt;Derived&gt;();</code> 则创建并拥有另一个动态分配的派生对象。两种方式都保留多态，但指向两个不同对象。前提是 <code>Base</code> 有可访问的虚析构函数；<b>禁止用默认删除器的 <code>unique_ptr</code> 接管 <code>&amp;d</code></b>。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 借用局部对象 d</div>
+                  <div class="mem-block show retained">
+                    <div class="addr">原对象 Derived d（继续存活）</div>
+                    <div class="val" style="color:#32667a">仍由其作用域管理生命周期</div>
+                  </div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">Base&amp; ref = d;</div>
+                    <div class="val" style="color:#356d50">ref 借用 d，虚调用到 Derived；不负责释放</div>
+                  </div>
+                  <div class="mem-block show retained">
+                    <div class="addr">上一步的 Base b 也仍存活</div>
+                    <div class="val">b 是独立的切片副本，不是 ref 的目标</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🏭 p 拥有另一个动态对象</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">unique_ptr&lt;Base&gt; p = make_unique&lt;Derived&gt;();</div>
+                    <div class="val" style="color:#356d50">p 拥有新建 Derived 对象，与局部 d 不同</div>
+                  </div>
+                  <div class="mem-block show" style="border-color:#356d50">
+                    <div class="addr">要求：public: virtual ~Base() = default;</div>
+                    <div class="val" style="color:#356d50">p 析构时销毁动态对象；局部 d 由作用域另行销毁</div>
+                  </div>
+                  <div class="mem-block leak show">
+                    <div class="addr">禁止：std::unique_ptr&lt;Base&gt; bad(&amp;d);</div>
+                    <div class="val" style="color:#a54643">默认删除器不能 delete 局部对象 d</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 3,
+            explain: "步骤 3（4.10 节普通菱形继承）：若 <code>Left</code> 和 <code>Right</code> 都普通继承自顶层基类 <code>A</code>，而 <code>BadDiamond</code> 同时继承 <code>Left, Right</code>，则 <code>BadDiamond</code> 对象内存中会包含<b>两份独立的 <code>A</code> 基类子对象</b>（<code>Left::A</code> 与 <code>Right::A</code>），直接访问 <code>bd.value</code> 会因二义性编译报错！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">📐 普通菱形继承关系图</div>
+                  <div class="mem-block leak show">
+                    <div class="addr">顶层 A 被分叉继承两次</div>
+                    <div class="val" style="color:#a54643">Left::A (value=1) &nbsp;&nbsp; Right::A (value=2)</div>
+                    <div class="val" style="color:#a54643">&nbsp;&nbsp;&nbsp;&nbsp;↘ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↙</div>
+                    <div class="val" style="color:#88601c">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;BadDiamond bd</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">📦 BadDiamond 对象内部子对象布局</div>
+                  <div class="mem-block leak show">
+                    <div class="addr">子对象 #1：Left 分支</div>
+                    <div class="val" style="color:#a54643">[ Left::A 子对象 ] + Left 成员</div>
+                  </div>
+                  <div class="mem-block leak show">
+                    <div class="addr">子对象 #2：Right 分支（重复冗余！）</div>
+                    <div class="val" style="color:#a54643">[ Right::A 子对象 ] + Right 成员</div>
+                  </div>
+                  <div class="mem-block show">
+                    <div class="addr">编译期诊断</div>
+                    <div class="val" style="color:#a54643">❌ bd.value 二义性报错 (ambiguous)！</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 4,
+            explain: "步骤 4（4.10 节切换为 <code>virtual</code> 虚继承）：让中间层写 <code>struct Left : virtual public A</code> 和 <code>struct Right : virtual public A</code>，此时最派生类 <code>Diamond</code> 内存中<b>只保留唯一一份共享的虚基类子对象 <code>A</code></b>，且由最派生类 <code>Diamond</code> 直接负责初始化 <code>A</code>，二义性彻底消除！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">💎 virtual 虚继承关系图</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">唯一共享虚基类 A</div>
+                    <div class="val" style="color:#356d50">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[ 唯一共享 A (value) ]</div>
+                    <div class="val" style="color:#32667a">&nbsp;&nbsp;&nbsp;virtual ↙ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↘ virtual</div>
+                    <div class="val" style="color:#32667a">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Left &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Right</div>
+                    <div class="val" style="color:#356d50">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↘ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↙</div>
+                    <div class="val" style="color:#88601c">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Diamond d</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">📦 Diamond 虚继承内存布局</div>
+                  <div class="mem-block show">
+                    <div class="addr">Left 与 Right 子对象（经偏移/vbptr 指向共享 A）</div>
+                    <div class="val" style="color:#32667a">[ Left 成员 ] + [ Right 成员 ]</div>
+                  </div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">共享虚基类区（由最派生类 Diamond 直接构造）</div>
+                    <div class="val" style="color:#356d50">✅ [ 唯一 A 子对象 ] ──▶ d.value 无歧义！</div>
+                  </div>
+                </div>
+              </div>`
+          }
+        ]
+      },
+      {
+        title: "⑪ [手册第5章] 模板编译期实例化 & if constexpr 裁剪 (5.1–5.5)",
+        analogy: "💡 手册 5.1–5.5 核心：模板不是运行期万能类型，而是<b>编译期的铸造模具</b>！调用点用到什么类型，编译器就现场浇铸一份专用函数；<code>if constexpr</code> 更能在编译期直接剪掉不匹配的分支！",
+        code: [
+          "template<class T> T larger(T a, T b) { return a < b ? b : a; }",
+          "int x = larger(2, 5);            // 1. 编译期浇铸 larger<int>",
+          "// larger(2, 5.5);               // 2. ❌ 推导冲突：T 既是 int 又是 double",
+          "if constexpr (is_integral_v<T>)  // 3. 编译期裁剪：未选分支不实例化！"
+        ],
+        steps: [
+          {
+            line: 1,
+            explain: "步骤 1：调用 <code>larger(2, 5)</code> —— 编译器在编译期推导出 <code>T = int</code>，自动用模具生成一份专属的 <code>int larger&lt;int&gt;(int, int)</code> 实例代码（因此模板定义通常必须放在头文件 <code>.hpp</code> 里让调用点看见）。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#88601c">🏭 头文件模板模具 (.hpp)</div>
+                  <div class="mem-block show">
+                    <div class="addr">template&lt;class T&gt;</div>
+                    <div class="val" style="color:#88601c">T larger(T a, T b)</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">⚙️ 编译期生成的机器码实例</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">实例 #1 (T = int)</div>
+                    <div class="val" style="color:#356d50">int larger&lt;int&gt;(int, int)</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 2,
+            explain: "步骤 2（练习 5-A）：如果写 <code>larger(2, 5.5)</code>，左实参要求 <code>T = int</code>，右实参要求 <code>T = double</code>，模板推导不会自动做算术隐式转换，直接报推导歧义错误！应显式写 <code>larger&lt;double&gt;(2, 5.5)</code>。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">❌ 推导冲突：larger(2, 5.5)</div>
+                  <div class="mem-block leak show">
+                    <div class="addr">实参 1 推导 T=int vs 实参 2 推导 T=double</div>
+                    <div class="val" style="color:#a54643">💥 编译报错：deduced conflicting types!</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">✅ 解决方式：显式指定模板实参</div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">larger&lt;double&gt;(2, 5.5)</div>
+                    <div class="val" style="color:#32667a">锁定 T = double，2 安全转为 2.0</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 3,
+            explain: "步骤 3（5.5 节）：<code>if constexpr (std::is_integral_v&lt;T&gt;)</code> 在编译期决定分支 —— 当 <code>T = int</code> 时，<code>else</code> 里的 <code>x.text()</code> 分支被直接丢弃，哪怕 <code>int</code> 根本没有 <code>.text()</code> 成员函数也不会报错！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">✅ 编译期命中分支 (T = int)</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">is_integral_v&lt;int&gt; == true</div>
+                    <div class="val" style="color:#356d50">保留：return std::to_string(x);</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#5f6e65">✂️ 编译期丢弃分支（不实例化）</div>
+                  <div class="mem-block moved show">
+                    <div class="addr">else 分支</div>
+                    <div class="val">return x.text(); (已裁剪，不触发编译错误)</div>
+                  </div>
+                </div>
+              </div>`
+          }
+        ]
+      },
+      {
+        title: "⑫ [手册第5章] Lambda 闭包底层真相与捕获悬垂 (5.8–5.9)",
+        analogy: "💡 手册 5.8 节核心：Lambda 不是魔法，编译器在背后把它翻译成了一个<b>带 <code>operator()</code> 的匿名结构体（闭包 Closure）</b>！按值捕获 <code>[x]</code> 是拷贝成员变量，按引用捕获 <code>[&x]</code> 是存引用成员！",
+        code: [
+          "int limit = 2, calls = 0;",
+          "auto fn = [limit, &calls](int x) { ++calls; return x > limit; };",
+          "// 练习 5-C：若函数返回 [&local]{ return local; } 会怎样？",
+          "auto bad = makeLambda(); // ❌ local 已销毁，闭包内引用当场悬垂！"
+        ],
+        steps: [
+          {
+            line: 1,
+            explain: "步骤 1：执行 <code>[limit, &calls](int x){...}</code> —— 编译器自动生成一个匿名类实例，里面存着 <code>int limit = 2</code>（独立副本）和 <code>int& calls</code>（指向栈变量的引用）。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 外部栈变量</div>
+                  <div class="mem-block show">
+                    <div class="addr">局部变量</div>
+                    <div class="val" style="color:#32667a">limit = 2, calls = 0</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#735887">🔮 编译器生成的闭包对象 fn</div>
+                  <div class="mem-block show highlight" style="border-color:#735887">
+                    <div class="addr">struct __LambdaClosure</div>
+                    <div class="val" style="color:#356d50">成员1: int limit_copy = 2 (快照)</div>
+                    <div class="val" style="color:#88601c">成员2: int&amp; calls_ref ──▶ 绑定 calls</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 3,
+            explain: "步骤 2（练习 5-C 致命坑）：如果函数返回了一个按引用捕获局部变量的 Lambda <code>[&local]{ return local; }</code>，函数一返回，栈上的 <code>local</code> 销毁，而逃逸出来的闭包对象 <code>bad</code> 依然存活，其内部的引用成员变成悬空引用！此时调用 <code>bad()</code> 会<b>触发未定义行为（UB：可能崩溃，也可能读到旧栈残留值而暂时表现正常）</b>！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">📦 已退出的函数栈帧 (local 已析构)</div>
+                  <div class="mem-block show retained">
+                    <div class="addr">外部局部变量 (仍在 main 栈帧存活)</div>
+                    <div class="val" style="color:#32667a">limit = 2, calls = 0（fn 尚未调用）</div>
+                  </div>
+                  <div class="mem-block moved show">
+                    <div class="addr">makeLambda() 局部变量 local</div>
+                    <div class="val" style="color:#a54643">❌ 已随函数返回结束生命周期</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">💥 逃逸出来的存活闭包对象 bad</div>
+                  <div class="mem-block show retained">
+                    <div class="addr">闭包对象 fn (正常存活)</div>
+                    <div class="val" style="color:#356d50">limit_copy = 2 | calls_ref ──▶ calls</div>
+                  </div>
+                  <div class="mem-block leak show">
+                    <div class="addr">闭包对象 bad (存活，但成员悬垂)</div>
+                    <div class="val" style="color:#a54643">⚠️ bad.local_ref 悬空！调用触发 UB（可能崩溃，也可能暂时看似正常）</div>
+                  </div>
+                </div>
+              </div>`
+          }
+        ]
+      },
+      {
+        title: "⑬ [手册第6章] vector 的 size vs capacity 与扩容全失效 (6.3–6.6)",
+        analogy: "💡 手册 6.3–6.4 核心：<code>size</code> 是餐厅里<b>已经坐人的椅子数</b>，<code>capacity</code> 是餐厅<b>当前摆下的总椅子数</b>。<code>reserve(2)</code> 只保证容量<b>至少为 2</b>（不能直接用 <code>v[0]</code> 访问未构造槽位！）；当 <code>size == capacity</code> 再插入新元素时触发重分配搬家（本动画假设容量按 2→4 几何倍增），旧座位号（迭代器/指针/引用）全部失效！",
+        code: [
+          "std::vector<int> v;",
+          "v.reserve(2);       // 1. 保证 capacity >= 2（本例假设 capacity=2, size=0）",
+          "// v[0] = 1;        // ❌ 练习6-A：size为0，直接写 v[0] 是越界 UB！",
+          "v.push_back(10); v.push_back(20); // 2. 坐满当前容量：size=2, capacity=2",
+          "v.push_back(30);    // 3. ⚡ size==capacity 触发扩容(假设2→4)：旧迭代器/指针全失效！"
+        ],
+        steps: [
+          {
+            line: 1,
+            explain: "步骤 1：<code>v.reserve(2);</code> —— 标准保证 <code>capacity() &gt;= 2</code>（本动画假设此时 <code>capacity == 2</code>），在堆上开辟了可容纳 2 个 <code>int</code> 的原始内存，但此时 <code>size() == 0</code>（没有任何已构造元素）！直接写 <code>v[0] = 1</code> 会触发未定义行为（UB）！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 栈区：vector 控制头 v</div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">std::vector&lt;int&gt; v (存活)</div>
+                    <div class="val" style="color:#32667a">data_ = 0x4000 | size = 0 | capacity = 2 (假设值)</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#88601c">🏭 堆区：缓冲区 0x4000 (假设容量为 2)</div>
+                  <div class="mem-block moved show">
+                    <div class="addr">0x4000 槽位 [0], [1] (未构造原始内存)</div>
+                    <div class="val">[ 未构造空位 ] [ 未构造空位 ] (禁写 v[0]!)</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 3,
+            explain: "步骤 2：两次 <code>push_back</code> 后，<code>size = 2, capacity = 2</code>，当前缓冲区 <code>0x4000</code> 已满载。此时我们在栈上保存指针 <code>int* p = &amp;v[0];</code> 和迭代器 <code>auto it = v.begin();</code>（若 <code>reserve(2)</code> 当初实际分配了更大容量，则第 3 次插入不一定扩容；本动画以恰好满载 <code>capacity == 2</code> 演示扩容）。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 栈区：v 与外部保存的 it / p</div>
+                  <div class="mem-block show retained">
+                    <div class="addr">std::vector&lt;int&gt; v (已满载)</div>
+                    <div class="val" style="color:#356d50">data_ = 0x4000 | size = 2 | capacity = 2</div>
+                  </div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">外部变量 it = v.begin(), p = &amp;v[0]</div>
+                    <div class="val" style="color:#88601c">保存了旧地址 0x4000</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🏭 堆区：缓冲区 0x4000</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">0x4000 (2 个已构造元素)</div>
+                    <div class="val" style="color:#356d50">[ 10 ]  [ 20 ]</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 4,
+            explain: "步骤 3：当 <code>size == capacity</code> 时再执行 <code>v.push_back(30);</code> —— 触发几何扩容（本例假设容量 <code>2 → 4</code>）：① 新分配 <code>0x9000</code>；② 把 <code>10, 20</code> 搬移过去并构造 <code>30</code>；③ <b>释放旧缓冲区 <code>0x4000</code></b>！栈上仍然存活的 <code>it</code> 和 <code>p</code> 仍指着已释放的 <code>0x4000</code>，解引用它们会触发 UB（可能崩溃，也可能读到旧脏数据）！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">📦 栈区：v 已换新址，旧 it / p 悬空失效</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">std::vector&lt;int&gt; v (已更新控制头)</div>
+                    <div class="val" style="color:#356d50">data_ = 0x9000 | size = 3 | capacity = 4</div>
+                  </div>
+                  <div class="mem-block leak show">
+                    <div class="addr">外部存活变量 it / p (未更新!)</div>
+                    <div class="val" style="color:#a54643">⚠️ 仍指 0x4000 (已失效，解引用触发 UB!)</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🏭 堆区：旧块释放 vs 新块启用</div>
+                  <div class="mem-block moved show">
+                    <div class="addr">旧缓冲区 0x4000 (已释放回收)</div>
+                    <div class="val" style="color:#a54643">❌ [ 已释放内存 ]</div>
+                  </div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">新缓冲区 0x9000 (假设按 2→4 几何扩容)</div>
+                    <div class="val" style="color:#356d50">[ 10 ]  [ 20 ]  [ 30 ]  [ 空位 ]</div>
+                  </div>
+                </div>
+              </div>`
+          }
+        ]
+      },
+      {
+        title: "⑭ [手册第6章] erase-remove 惯用法 & string_view 借用生命周期 (6.7 & 6.13)",
+        analogy: "💡 手册 6.13 & 6.7 核心：算法 <code>remove_if</code> 只把保留元素往前覆盖并返回 <code>newEnd</code>，必须再调 <code>v.erase</code> 才能真正缩减 <code>size</code>；而 <code>string_view</code> 只是一扇<b>不持所有权的观察窗 <code>{ptr, len}</code></b>，源字符串改字符它会跟着变，源字符生命周期结束或实际重分配后，旧视图失效；下面用两个独立示例分别演示！",
+        code: [
+          "std::vector<int> v{1, -2, 3, -4};",
+          "auto newEnd = std::remove_if(v.begin(), v.end(), [](int x){return x<0;}); // 1. 压紧保留项，size仍为4",
+          "v.erase(newEnd, v.end());                   // 2. 擦除尾部残骸，size缩为2",
+          "std::string_view sv; // 外层观察窗，稍后仍会存活",
+          "{",
+          "  std::string src = \"hello\"; // 内层拥有者",
+          "  sv = src; // 3. 仅借用字符，不复制",
+          "  src[0] = 'H'; // 4. sv 看到 Hello",
+          "} // 5. 内层 src 析构；外层 sv 仍存活，但已悬垂，勿读取字符",
+          "// 6. 另一独立示例：源对象仍存活，但容量增长导致重分配",
+          "std::string growing = \"hello\"; std::string_view oldView = growing;",
+          "growing.reserve(growing.capacity() + 1); // 假设分配成功：growing 存活，oldView 失效"
+        ],
+        steps: [
+          {
+            line: 1,
+            explain: "步骤 1（<code>remove_if</code> 压紧阶段）：初始 <code>v</code> 为 <code>[1, -2, 3, -4]</code>（<code>size = 4</code>）。执行 <code>std::remove_if</code> 后，非负数 <code>1, 3</code> 被往前覆盖到索引 <code>0, 1</code>，并返回逻辑新终点 <code>newEnd</code>（指向索引 2）。注意：算法没有容器权限，<b>此时 <code>v.size()</code> 仍然是 4</b>，尾部两个位置只是待清理残骸！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">✅ 前半段：保留区 [begin, newEnd)</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">v 索引 [0], [1] (有效保留元素)</div>
+                    <div class="val" style="color:#356d50">[ 1 ]  [ 3 ]  ◀── newEnd 指在索引 2</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">⚠️ 后半段：尾部残骸区 [newEnd, end)</div>
+                  <div class="mem-block leak show">
+                    <div class="addr">v 索引 [2], [3] (此时 v.size() 仍为 4!)</div>
+                    <div class="val" style="color:#a54643">[ ? ]  [ ? ] (未擦除，仍在容器 size 内)</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 2,
+            explain: "步骤 2（<code>v.erase</code> 真正擦除阶段）：调用成员函数 <code>v.erase(newEnd, v.end());</code> —— 容器正式销毁 <code>[newEnd, end)</code> 区间的残骸元素，并将 <code>v.size()</code> 从 4 缩减为 2（<code>capacity</code> 保持为 4）！C++20 可用 <code>std::erase_if(v, pred)</code> 一行完成这两步。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🎉 v.erase 后容器状态 (size = 2, cap = 4)</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">v 索引 [0], [1] (正式元素)</div>
+                    <div class="val" style="color:#356d50">✅ [ 1 ]  [ 3 ]  ◀── v.end()</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#5f6e65">🧹 原尾部槽位 [2], [3] 已析构</div>
+                  <div class="mem-block moved show">
+                    <div class="addr">已移出 size 范围</div>
+                    <div class="val">[ 已擦除空位 ]  [ 已擦除空位 ]</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 6,
+            explain: "步骤 3（内外两层作用域）：先在外层声明 <code>std::string_view sv;</code>，再在内层 <code>{ ... }</code> 中构造 <code>std::string src = &quot;hello&quot;;</code>，最后执行 <code>sv = src;</code>。视图借用字符，不分配或复制字符。图中地址是示意值；短字符串的字符也可能存放在 string 对象内部，不应把这幅图当作固定的堆布局。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 栈区：源 string 与借用者 string_view</div>
+                  <div class="mem-block show">
+                    <div class="addr">内层拥有者：std::string src（存活）</div>
+                    <div class="val" style="color:#32667a">src.data() = 0x6200, size = 5</div>
+                  </div>
+                  <div class="mem-block show highlight" style="border-color:#735887">
+                    <div class="addr">外层观察窗：sv（本步借用 src）</div>
+                    <div class="val" style="color:#735887">sv.ptr = 0x6200, sv.len = 5 (零拷贝借用)</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🔤 src 管理的字符区 0x6200（存储位置仅作示意）</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50;margin-top:28px;">
+                    <div class="addr">0x6200 (src 与 sv 共同指向此处)</div>
+                    <div class="val" style="color:#356d50">['h']['e']['l']['l']['o']['\\0']</div>
+                  </div>
+                </div>
+              </div>
+              <svg class="svg-overlay" viewBox="0 0 700 360">
+                <path d="M 310 82 L 410 115" fill="none" stroke="#32667a" stroke-width="2.5"/>
+                <path d="M 310 155 L 410 125" fill="none" stroke="#735887" stroke-width="3" class="anim-arrow"/>
+              </svg>`
+          },
+          {
+            line: 7,
+            explain: "步骤 4（<code>string_view</code> 第 2 幕：原地修改源字符）：执行 <code>src[0] = 'H';</code>（原地修改，未触发重分配）。由于 <code>sv</code> 只是指向 <code>0x6200</code> 的观察窗口，通过 <code>sv</code> 看到的内容也立刻变成 <code>\"Hello\"</code>！（另外注意：若调用 <code>sv.remove_suffix(2)</code>，长度缩为 3，末尾便不再有 <code>'\\0'</code>，绝不可强转传给期望 C 字符串的接口）。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 栈区：src 与 sv 均继续存活</div>
+                  <div class="mem-block show retained">
+                    <div class="addr">内层拥有者：src（原地修改首字符）</div>
+                    <div class="val" style="color:#32667a">src[0] = 'H' (地址仍为 0x6200)</div>
+                  </div>
+                  <div class="mem-block show highlight" style="border-color:#735887">
+                    <div class="addr">外层观察窗：std::string_view sv</div>
+                    <div class="val" style="color:#735887">读取 sv ──▶ 同步变成 "Hello"！</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#88601c">🔤 src 管理的字符区 0x6200（内容已变）</div>
+                  <div class="mem-block show highlight" style="margin-top:28px;">
+                    <div class="addr">0x6200</div>
+                    <div class="val" style="color:#88601c">['H']['e']['l']['l']['o']['\\0']</div>
+                  </div>
+                </div>
+              </div>
+              <svg class="svg-overlay" viewBox="0 0 700 360">
+                <path d="M 310 82 L 410 115" fill="none" stroke="#32667a" stroke-width="2" opacity="0.6"/>
+                <path d="M 310 155 L 410 125" fill="none" stroke="#88601c" stroke-width="3" class="anim-arrow"/>
+              </svg>`
+          },
+          {
+            line: 8,
+            explain: "步骤 5（仅演示源对象销毁）：执行内层右花括号 <code>}</code>，内层 <code>src</code> 析构，其字符不再可供访问；外层 <code>sv</code> 的作用域尚未结束，因此视图对象仍存活，但已悬垂。<b>到此停止读取它的字符</b>，例如 <code>sv[0]</code> 或输出其内容会触发未定义行为。视图悬垂与视图对象自身销毁是两回事；下面另用一个独立示例演示重分配。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">📦 栈区：src 已销毁，但 sv 仍然存活！</div>
+                  <div class="mem-block moved show">
+                    <div class="addr">内层拥有者：src（已退出作用域并析构）</div>
+                    <div class="val" style="color:#a54643">❌ 原字符生命周期已结束，不能再访问</div>
+                  </div>
+                  <div class="mem-block leak show">
+                    <div class="addr">外层观察窗：sv（仍存活，但已悬垂）</div>
+                    <div class="val" style="color:#a54643">⚠️ sv.ptr 仍指 0x6200！读取触发 UB！</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">🔤 原字符区 0x6200（不再有效）</div>
+                  <div class="mem-block leak show" style="margin-top:28px;">
+                    <div class="addr">0x6200 (悬空目标)</div>
+                    <div class="val" style="color:#a54643">⚠️ [ 不可访问原字符；不演示任何确定输出 ]</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 11,
+            explain: "步骤 6（独立示例：重分配，源对象仍存活）：创建新的拥有者 <code>growing</code> 和视图 <code>oldView</code>，再调用 <code>growing.reserve(growing.capacity() + 1);</code>。假设容量可增加且分配成功，请求超过原容量会触发重分配。<code>growing</code> 仍存活，内容仍是 <code>&quot;hello&quot;</code>，但旧视图已失效；不能读取旧字符。需要继续使用时可重新执行 <code>oldView = growing;</code> 绑定新字符区。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 独立示例：growing 与 oldView</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">std::string growing（仍存活，未析构）</div>
+                    <div class="val" style="color:#356d50">内容仍为 hello，成功重分配后管理新字符区</div>
+                  </div>
+                  <div class="mem-block leak show">
+                    <div class="addr">std::string_view oldView（未自动更新）</div>
+                    <div class="val" style="color:#a54643">仍保存旧地址，已失效，不能读取字符</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🔤 重分配后的字符区</div>
+                  <div class="mem-block moved show">
+                    <div class="addr">旧字符区</div>
+                    <div class="val">旧借用关系已失效</div>
+                  </div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">新字符区（由 growing 管理）</div>
+                    <div class="val" style="color:#356d50">['h']['e']['l']['l']['o']</div>
+                  </div>
+                  <div class="mem-block show" style="border-color:#735887">
+                    <div class="addr">后续正确操作：oldView = growing;</div>
+                    <div class="val" style="color:#735887">重新建立借用后，才能继续读取</div>
+                  </div>
+                </div>
+              </div>`
+          }
+        ]
+      },
+      {
+        title: "⑮ [手册第7章] optional / variant 内存布局与异常重抛 (7.2–7.11)",
+        analogy: "💡 手册第 7 章核心：<code>optional&lt;T&gt;</code> 和 <code>variant&lt;int, ParseError&gt;</code> 都在<b>对象内部直接存储数据与状态标签（零额外堆分配）</b>；而在 <code>catch</code> 块重抛异常时，写 <code>throw e;</code> 会把派生类异常切片成基类，必须写 <code>throw;</code>！",
+        code: [
+          "std::optional<int> port = findPort();",
+          "int p = port.value_or(expensive()); // 1. ⚠️ 坑：expensive() 总会先求值！",
+          "Result r = parseInt(\"12xyz\");       // 2. from_chars 发现尾随字符返回 ParseError",
+          "catch (const std::exception& e) {",
+          "  throw;   // 3. ✅ 原样重抛保留动态类型（写 throw e; 会发生对象切片！）",
+          "}"
+        ],
+        steps: [
+          {
+            line: 1,
+            explain: "步骤 1（练习 7-A 坑点）：<code>optional&lt;int&gt;</code> 在栈对象内部直接放 <code>[int 存储区 + bool has_value]</code>。但调用 <code>port.value_or(expensive())</code> 时，因为它是普通函数调用，<b>哪怕 <code>port</code> 里已经有值，参数 <code>expensive()</code> 也会被无条件先执行一次</b>！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 optional&lt;int&gt; 栈内布局 (零堆分配)</div>
+                  <div class="mem-block show">
+                    <div class="addr">对象内直接包含值与标志位</div>
+                    <div class="val" style="color:#356d50">[ value = 8080 ] [ has_value = true ]</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">⚠️ 练习 7-A：value_or 的急切求值</div>
+                  <div class="mem-block leak show">
+                    <div class="addr">port.value_or(expensive())</div>
+                    <div class="val" style="color:#a54643">哪怕 has_value 为 true，实参 expensive() 仍会先执行！惰性求值需写 if 判断</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 2,
+            explain: "步骤 2（7.5 & 7.11 节）：<code>std::variant&lt;int, ParseError&gt;</code> 是类型安全的带标签联合体（<code>[Union 最大成员空间 + index 活动类型下标]</code>）。配合 <code>std::from_chars</code> 扫描字符区间 <code>[data, end)</code>，发现 <code>\"12xyz\"</code> 中 <code>r.ptr != end</code>，零异常返回 <code>ParseError::trailing</code>！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#88601c">🔍 from_chars 扫描 "12xyz"</div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">r.ptr 停在 'x' 处 != end</div>
+                    <div class="val" style="color:#88601c">检测到未消费尾随字符 "xyz"！</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#735887">📦 variant&lt;int, ParseError&gt; 状态</div>
+                  <div class="mem-block show" style="border-color:#735887">
+                    <div class="addr">index() == 1 (当前持有 ParseError)</div>
+                    <div class="val" style="color:#735887">存储值：ParseError::trailing</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 4,
+            explain: "步骤 3（7.2 节练习 7-C）：在 <code>catch (const std::exception& e)</code> 中重抛异常时，写 <code>throw;</code> 会把当前正在处理的完整派生异常（如 <code>std::invalid_argument</code>）原样抛出去；如果误写成 <code>throw e;</code>，则会按静态类型 <code>std::exception</code> 复制新对象，发生【异常对象切片】！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">✅ 写 throw;（正确重抛）</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">原样重新抛出当前异常对象</div>
+                    <div class="val" style="color:#356d50">完整保留 std::invalid_argument 动态类型！</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">❌ 写 throw e;（发生切片!）</div>
+                  <div class="mem-block leak show">
+                    <div class="addr">按 e 的静态类型复制新异常</div>
+                    <div class="val" style="color:#a54643">✂️ 派生信息被切掉，退化成纯 std::exception！</div>
+                  </div>
+                </div>
+              </div>`
+          }
+        ]
+      },
+      {
+        title: "⑯ [手册第8章] thread 参数寿命、未 join 析构崩溃与 C++20 jthread (8.1–8.3 & 8.15)",
+        analogy: "💡 手册 8.2–8.3 & 8.15 核心：启动线程就像派外卖员出门，如果主线程不等外卖员回来（忘调 <code>join()</code>）就直接把店拆了，C++ 标准库在 <code>~thread()</code> 中发现 <code>joinable() == true</code> 会确定性地调用 <code>std::terminate()</code> 终止进程！用 <code>JoinOnExit</code> 守卫或 C++20 <code>std::jthread</code> 才能确保安全回收。",
+        code: [
+          "int result = 5; // 主线程栈变量",
+          "std::thread worker(addTen, std::ref(result)); // 1. 显式传引用借用",
+          "// 若此处忘调 join() 直接离开作用域 ──▶ std::terminate() 终止进程！",
+          "JoinOnExit guard(worker); // 2. C++17 RAII 守卫确保退出前必 join()",
+          "std::jthread jw([](std::stop_token st){...}); // 3. C++20 自动 request_stop + join"
+        ],
+        steps: [
+          {
+            line: 1,
+            explain: "步骤 1（8.2 节）：<code>std::thread</code> 默认会把实参<b>按值衰减拷贝</b>一份。若想让子线程修改主线程的 <code>result</code>，必须用 <code>std::ref(result)</code> 显式借用，且在 <code>join()</code> 完成前主线程不能读写或销毁 <code>result</code>！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📦 主线程栈帧 (拥有者)</div>
+                  <div class="mem-block show">
+                    <div class="addr">int result = 5 (存活)</div>
+                    <div class="val" style="color:#32667a">被子线程通过 std::ref 借用中...</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#735887">⚙️ 工作线程 worker (joinable() == true)</div>
+                  <div class="mem-block show highlight" style="border-color:#735887">
+                    <div class="addr">addTen(int&amp; value)</div>
+                    <div class="val" style="color:#735887">正在执行 value += 10...</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 2,
+            explain: "步骤 2（练习 8-A 致命坑）：哪怕子线程函数早已执行完毕，只要还没调过 <code>join()</code> 或 <code>detach()</code>，<code>worker.joinable()</code> 就依然是 <code>true</code>！此时一旦析构 <code>worker</code> 对象，标准库定死直接调用 <code>std::terminate()</code> 强行终止程序！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">💥 反例：未 join 直接析构 std::thread</div>
+                  <div class="mem-block leak show">
+                    <div class="addr">~thread() 检查发现 joinable() == true</div>
+                    <div class="val" style="color:#a54643">🚨 标准规定：直接调用 std::terminate()！</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">✅ 正解 (8.3 节)：紧跟声明 JoinOnExit 守卫</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">~JoinOnExit() 析构顺序先于 worker</div>
+                    <div class="val" style="color:#356d50">无论正常返回还是抛异常，自动调 worker.join()！</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 4,
+            explain: "步骤 3（8.15 节 & 练习 8-F）：C++20 <code>std::jthread</code> 析构时会自动先调 <code>request_stop()</code> 再 <code>join()</code>。注意：这是<b>协作式停止</b>，工作线程必须主动检查 <code>stop_token</code>（或用 <code>condition_variable_any::wait(lock, stop, pred)</code>）才会停下！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#88601c">🛑 1. jthread 析构发出协作停止</div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">~jthread() 自动动作</div>
+                    <div class="val" style="color:#88601c">request_stop() ──▶ 触发 stop_token</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🤝 2. 工作线程观察令牌并安全 join</div>
+                  <div class="mem-block show" style="border-color:#356d50">
+                    <div class="addr">观察 stop.stop_requested()</div>
+                    <div class="val" style="color:#356d50">清理退出 ──▶ 主线程完成 join ──▶ 安全销毁数据</div>
+                  </div>
+                </div>
+              </div>`
+          }
+        ]
+      },
+      {
+        title: "⑰ [手册第8章] 互斥锁临时量陷阱、死锁环与 scoped_lock (8.4–8.6)",
+        analogy: "💡 手册 8.4–8.6 核心：写 <code>std::lock_guard&lt;std::mutex&gt;{mtx};</code> 忘了起变量名，就像进门锁上同一秒又把门打开了！而两线程按相反顺序抢两把锁会形成死锁环，C++17 用 <code>std::scoped_lock(a.m, b.m)</code> <b>通过避免死锁的算法同时取得多把锁</b>（注意：自转账、余额与溢出检查仍需业务代码自己实现）！",
+        code: [
+          "// ❌ 笔误：std::lock_guard<std::mutex>{mutex}; // 临时量当行析构解锁！",
+          "std::unique_lock<std::mutex> lock(mutex);       // 1. 持锁进入临界区",
+          "int snapshot = shared; lock.unlock();           // 2. 拷出快照后提前解锁做慢操作",
+          "if (&from == &to) return false;                 // 3. 业务前置检查：防同账户自锁",
+          "std::scoped_lock both(from.mutex, to.mutex);    // 4. 死锁避免算法拿双锁 + 业务检查余额/溢出"
+        ],
+        steps: [
+          {
+            line: 0,
+            explain: "步骤 1（8.4 节高频坑）：如果写成无名临时量 <code>std::lock_guard&lt;std::mutex&gt;{mutex};</code>，它在这一行分号结束时就会立即析构解锁，后面的 <code>++count;</code> 完全处于无锁状态，并发读写会触发数据竞争（Data Race，属于未定义行为 UB）！必须给守卫起变量名！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">❌ 无名临时量：分号处立即析构解锁</div>
+                  <div class="mem-block leak show">
+                    <div class="addr">lock_guard&lt;mutex&gt;{mutex};</div>
+                    <div class="val" style="color:#a54643">⚠️ 当行即解锁！后续语句发生数据竞争(UB)!</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">✅ 具名变量：持锁直到作用域结束 }</div>
+                  <div class="mem-block show" style="border-color:#356d50">
+                    <div class="addr">lock_guard&lt;mutex&gt; lock(mutex);</div>
+                    <div class="val" style="color:#356d50">完整保护读-改-写整条不变量</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 2,
+            explain: "步骤 2（8.5 节）：用 <code>std::unique_lock</code> 在锁内快速取得数据副本 <code>snapshot = shared;</code>，立即调 <code>lock.unlock()</code>，再在锁外执行耗时计算或 IO，避免长时间占锁阻塞其他线程。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">🔒 锁内阶段（极短临界区）</div>
+                  <div class="mem-block show">
+                    <div class="addr">owns_lock() == true</div>
+                    <div class="val" style="color:#32667a">读取快照 snapshot = 7</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🔓 lock.unlock() 后（锁外慢操作）</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">owns_lock() == false</div>
+                    <div class="val" style="color:#356d50">其他线程可自由拿锁；当前线程安全算 snapshot * 2</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 4,
+            explain: "步骤 3（8.6 节死锁避免与业务检查）：线程 1 先锁 A 再等 B、线程 2 先锁 B 再等 A 会形成永久死锁环！改进分两层：① <b>锁层面</b>：先判 <code>&amp;from != &amp;to</code>，再用 <code>std::scoped_lock both(from.mutex, to.mutex);</code>（内部调用 <code>std::lock</code> 的<b>死锁避免算法</b>，如 try-and-back-off，安全取得多把锁）；② <b>业务层面</b>：锁只负责互斥，<b>余额是否充足、加款是否整数溢出仍需业务代码在临界区内显式检查</b>！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">🔄 相反顺序分别加锁 ──▶ 死锁环</div>
+                  <div class="mem-block leak show">
+                    <div class="addr">Thread 1 持 A 等 B ↔ Thread 2 持 B 等 A</div>
+                    <div class="val" style="color:#a54643">💀 双方互等对方释放，程序永久卡死！</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">✅ scoped_lock 死锁避免算法 + 业务检查</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">① 锁机制：std::scoped_lock(from.mutex, to.mutex)</div>
+                    <div class="val" style="color:#356d50">通过避免死锁的算法取得双锁（非硬件单指令）</div>
+                  </div>
+                  <div class="mem-block show" style="border-color:#32667a">
+                    <div class="addr">② 业务逻辑：临界区内显式校验不变量</div>
+                    <div class="val" style="color:#32667a">检查 amount &lt;= from.balance 且 to.balance 不溢出</div>
+                  </div>
+                </div>
+              </div>`
+          }
+        ]
+      },
+      {
+        title: "⑱ [手册第8章] 条件变量谓词等待与并发队列三步退出协议 (8.7–8.9 & 8.14)",
+        analogy: "💡 手册 8.7–8.9 核心：条件变量的 <code>notify</code> 就像按门铃，它<b>不保存按铃次数</b>（如果你没在听就漏掉了，还可能有虚假唤醒），所以必须等<b>受锁保护的状态谓词 <code>closed_ || !empty()</code></b>！关闭队列更要严格遵守【先 close ──▶ 再 join 排空 ──▶ 最后析构】三步曲！",
+        code: [
+          "// 消费者等待状态成立（绝不能用 if 代替谓词循环！）",
+          "changed_.wait(lock, [&]{ return closed_ || !values_.empty(); });",
+          "if (values_.empty()) return std::nullopt; // 已关闭且已排空，安全退出",
+          "// 主线程关闭与回收协议（顺序绝不可颠倒！）",
+          "queue.close();   // 1. 持锁设 closed_=true 并 notify_all()",
+          "join(consumer);  // 2. 等待消费者排空剩余元素并自然返回（随后才析构 queue）"
+        ],
+        steps: [
+          {
+            line: 1,
+            explain: "步骤 1（8.7 节 & 练习 8-C）：消费者调用 <code>changed_.wait(lock, pred)</code>。若谓词为 <code>false</code>，它会原子地释放锁并挂起；被唤醒后重新取得锁并再次检查谓词！如果生产者只调 <code>notify_all()</code> 却不改 <code>closed_ = true</code>，消费者醒来见谓词仍为 <code>false</code> 会继续睡眠等待！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">🔔 为什么必须用谓词循环 wait(lock, pred)？</div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">return closed_ || !values_.empty();</div>
+                    <div class="val" style="color:#32667a">既防操作系统虚假唤醒，又防通知早于等待导致丢信号！</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#88601c">⏱️ 8.14 超时等待铁律</div>
+                  <div class="mem-block show">
+                    <div class="addr">deadline = steady_clock::now() + 3ms</div>
+                    <div class="val" style="color:#88601c">用 wait_until(lock, deadline, pred) 保持总截止点不变</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 4,
+            explain: "步骤 2（8.8–8.9 节）：主线程结束生产（或捕获异常）时，第一步先调用 <code>queue.close()</code> —— 在锁内把 <code>closed_ = true</code>，然后调用 <code>changed_.notify_all()</code> 唤醒所有等待中的消费者线程。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#88601c">🚪 第 1 步：queue.close() (queue 仍存活)</div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">锁内修改状态 + 广播通知</div>
+                    <div class="val" style="color:#88601c">closed_ = true; changed_.notify_all();</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📤 第 2 步：消费者排空队列</div>
+                  <div class="mem-block show">
+                    <div class="addr">pop() 行为</div>
+                    <div class="val" style="color:#32667a">取完剩余数据后见 empty() 为真，返回 std::nullopt 退出循环</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 5,
+            explain: "步骤 3（练习 8-D 错序风险）：第二步由 <code>JoinOnExit</code> 执行 <code>consumer.join()</code> 等待消费者彻底退出；第三步最后才析构 <code>queue</code>！若把 <code>close()</code> 放在 <code>join()</code> 之后会永久死锁；若先析构 <code>queue</code> 再 <code>join()</code>，消费者将访问已销毁的 <code>mutex_</code> 触发未定义行为（UB）！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">✅ 正确顺序：close() ──▶ join() ──▶ ~IntQueue()</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">所有消费者已安全返回</div>
+                    <div class="val" style="color:#356d50">此时销毁 mutex_ / changed_ / values_ 100% 安全！</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">❌ 练习 8-D：若违反三步退出协议</div>
+                  <div class="mem-block leak show">
+                    <div class="addr">错序后果</div>
+                    <div class="val" style="color:#a54643">💀 先 join 后 close 会死锁；先析构队列后 join 会访问悬垂锁触发 UB！</div>
+                  </div>
+                </div>
+              </div>`
+          }
+        ]
+      },
+      {
+        title: "⑲ [手册第8章] atomic 组合非原子坑、release/acquire 与 future.valid() 状态 (8.10–8.13)",
+        analogy: "💡 手册 8.10–8.13 核心：<code>atomic</code> 只保证<b>单次原子操作</b>不可分割，拆成 <code>load + 1 + store</code> 照样被插队丢更新！<code>release / acquire</code> 构建跨线程可见性发布链；而普通 <code>std::future::get()</code> 是<b>一次性移动消费</b>，调用后 <code>fut.valid()</code> 立即从 <code>true</code> 变为 <code>false</code>！",
+        code: [
+          "// ❌ 练习8-B：count.store(count.load() + 1); // 两步之间被插队仍丢更新！",
+          "count.fetch_add(1, std::memory_order_relaxed); // 1. ✅ 单次原子读改写(RMW)",
+          "payload = 42; ready.store(true, std::memory_order_release); // 2. 生产者发布",
+          "while (!ready.load(std::memory_order_acquire)) yield();     // 3. 消费者获取后读 payload",
+          "assert(fut.valid()); auto v = fut.get(); // 4. get() 消费后 fut.valid() 变为 false！"
+        ],
+        steps: [
+          {
+            line: 1,
+            explain: "步骤 1（8.10 节 & 练习 8-B）：如果两个线程都对 <code>atomic&lt;int&gt;</code> 执行 <code>load()</code> 得 0、加 1、再 <code>store(1)</code>，虽然每次读写是原子的，但三步合起来不是原子事务，最终结果可能只有 1！必须用单次原子读改写操作 <code>count.fetch_add(1)</code>！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">❌ 拆成 load() + store()（丢失更新）</div>
+                  <div class="mem-block leak show">
+                    <div class="addr">线程 A 和 B 同时 load 到 0，各自 store 1</div>
+                    <div class="val" style="color:#a54643">⚠️ 两次自增后结果变成 1（if(c&gt;0)--c 同理非原子！）</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">✅ count.fetch_add(1)（原子读改写）</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">不可分割的 Read-Modify-Write</div>
+                    <div class="val" style="color:#356d50">两线程各加 10000 次，结果精确等于 20000！</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 3,
+            explain: "步骤 2（8.11 节 release/acquire 同步链）：生产者先写非原子变量 <code>payload = 42</code>，再以 <code>memory_order_release</code> 将 <code>ready</code> 置为 <code>true</code>；消费者以 <code>memory_order_acquire</code> 读到这个 <code>true</code> 时，标准保证 <code>payload = 42</code> happens-before 消费者的读取！（若改成 <code>relaxed</code> 则可能发生数据竞争 UB）。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📤 生产者：先写数据，再 release 发布</div>
+                  <div class="mem-block show">
+                    <div class="addr">1. payload = 42 (普通非原子写)</div>
+                    <div class="val" style="color:#356d50">2. ready.store(true, memory_order_release)</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#735887">📥 消费者：先 acquire 见 true，再读数据</div>
+                  <div class="mem-block show highlight" style="border-color:#735887">
+                    <div class="addr">3. ready.load(memory_order_acquire) == true</div>
+                    <div class="val" style="color:#735887">4. 安全读取 received = payload (必为 42)</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 4,
+            explain: "步骤 3（8.12–8.13 节 <code>future.valid()</code> 状态转移）：<code>promise</code> 将值或异常写入共享状态后，关联的普通 <code>std::future fut</code> 处于 <b><code>fut.valid() == true</code></b>；一旦调用 <code>fut.get()</code> 取出结果（或重抛异常），共享状态即被解除关联，<b><code>fut.valid()</code> 立即变为 <code>false</code></b>！注意：C++ 标准规定对 <code>valid() == false</code> 的 <code>future</code> 再次调 <code>get()</code> 是<b>未定义行为（UB，并不保证一定抛异常）</b>！如需多次读取应调 <code>fut.share()</code> 转为 <code>std::shared_future</code>。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🟢 调用 fut.get() 之前</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">fut 绑定着共享状态 (Shared State)</div>
+                    <div class="val" style="color:#356d50">fut.valid() == true (可安全调用 get / wait)</div>
+                  </div>
+                  <div class="mem-block show" style="border-color:#32667a">
+                    <div class="addr">8.13 std::async 启动策略</div>
+                    <div class="val" style="color:#32667a">launch::async 真异步线程 | deferred 延迟到 get() 时同步执行</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">🔴 调用一次 fut.get() 之后</div>
+                  <div class="mem-block leak show">
+                    <div class="addr">结果已被移动取走 / 异常已重抛，共享状态释放</div>
+                    <div class="val" style="color:#88601c">fut.valid() == false (已失去有效状态!)</div>
+                    <div class="val" style="color:#a54643">⚠️ 再次调 fut.get() 是 UB（不保证抛异常！多处读请用 shared_future）</div>
+                  </div>
+                </div>
+              </div>`
+          }
+        ]
+      },
+      {
+        title: "⑳ [手册第9章] 分离编译与链接器 ODR 流程、extern \"C\" 与 CMake/CTest (9.1–9.12)",
+        analogy: "💡 手册第 9 章核心：头文件里的 <code>#ifndef</code> 只防<b>同一个 <code>.cpp</code></b> 重复展开，拦不住 <code>a.cpp</code> 和 <code>b.cpp</code> 各自编译出 <code>a.o</code> 和 <code>b.o</code> 后在<b>链接器（Linker）合并符号表时撞车</b>（违反 ODR 单一定义规则）！",
+        code: [
+          "// [calc.h] #ifndef 保护下若写非 inline 定义：int add(int a,int b){return a+b;}",
+          "// [a.cpp & b.cpp] 各自 #include \"calc.h\" -> 编译生成 a.o 与 b.o -> 链接器报重定义！",
+          "// [calc.h 修复] 声明 int add(int,int); 放头文件 + 唯一定义放 calc.cpp（或加 inline）",
+          "// [calc.h C接口] extern \"C\" int calc_add(int a, int b, int* out); // 禁跨边界抛异常",
+          "// [CMakeLists.txt] target_include_directories(calc PUBLIC include) + CTest 显式 if"
+        ],
+        steps: [
+          {
+            line: 1,
+            explain: "步骤 1（9.1–9.3 节 & 练习 9-A：为什么有 <code>#ifndef</code> 还会报重定义？）：看完整构建流水线 —— ① 头文件 <code>calc.h</code> 里写了普通函数定义 <code>int add(int a,int b){...}</code>；② <code>a.cpp</code> 和 <code>b.cpp</code> 是两个独立的翻译单元，各自预处理展开 <code>calc.h</code> 并独立编译成功，导致目标文件 <b><code>a.o</code> 和 <code>b.o</code> 里面都生成了强符号 <code>add</code> 的机器码定义</b>；③ 到最后一步<b>链接器（ld）把 <code>a.o</code> 和 <code>b.o</code> 合并成可执行文件时</b>，发现两个强符号 <code>add</code> 当场撞车报错 <code>multiple definition of 'add'</code>！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">📄 阶段 1~2：头文件展开 ──▶ 两个 .cpp 独立编译</div>
+                  <div class="mem-block show">
+                    <div class="addr">calc.h (含 #ifndef，但写了非 inline 定义 int add(){...})</div>
+                    <div class="val" style="color:#88601c">↙ 被 a.cpp 包含 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↘ 被 b.cpp 包含</div>
+                  </div>
+                  <div class="mem-block show highlight">
+                    <div class="addr">生成的两个目标文件 (.o / .obj)</div>
+                    <div class="val" style="color:#32667a">📦 a.o [含符号 T add] &nbsp;+&nbsp; 📦 b.o [含符号 T add]</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">🔗 阶段 3：链接器 (Linker) 合并目标文件</div>
+                  <div class="mem-block leak show">
+                    <div class="addr">ld 合并 a.o + b.o ──▶ app.exe</div>
+                    <div class="val" style="color:#a54643">💥 Linker Error: multiple definition of 'add'！</div>
+                    <div class="val" style="color:#a54643">原因：#ifndef 只管单次预处理，管不到两个 .o 合并！</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 2,
+            explain: "步骤 2（9.2–9.3 节：满足 ODR 单一定义规则的正确流水线）：<b>方案 A（声明与定义分离）</b>：头文件 <code>calc.h</code> 只放声明 <code>int add(int, int);</code>，唯一定义放进 <code>calc.cpp</code>（编译为 <code>calc.o</code>），<code>a.o</code> 和 <code>b.o</code> 只留未决议引用 <code>U add</code>，链接器顺利把它们连向 <code>calc.o</code>！<b>方案 B（内联定义）</b>：头文件短小函数/C++17 常量加 <code>inline</code>，允许跨翻译单元出现相同定义，由链接器合并为同一实体。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">📄 修正后：各司其职的目标文件</div>
+                  <div class="mem-block show">
+                    <div class="addr">a.o 与 b.o（仅包含 calc.h 声明）</div>
+                    <div class="val" style="color:#32667a">符号表：U add (等待链接器解析引用)</div>
+                  </div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">calc.o（由 calc.cpp 编译，或使用 inline 合并）</div>
+                    <div class="val" style="color:#356d50">符号表：唯一强定义 T add</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🔗 链接器成功产出可执行文件</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50;margin-top:24px;">
+                    <div class="addr">ld 合并 a.o + b.o + calc.o ──▶ app.exe</div>
+                    <div class="val" style="color:#356d50">✅ 所有 U add 成功绑定到唯一 T add，链接通过！</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 3,
+            explain: "步骤 3（9.5 节 & 练习 9-B：<code>extern \"C\"</code> 边界契约）：<code>extern \"C\"</code> 只关闭 C++ 名字修饰（Name Mangling），<b>不包办 ABI</b>！跨语言头文件 <code>calc.h</code> 必须只用基本类型/指针与错误码枚举，C++ 实现内部必须拦截所有异常转为错误码（如 <code>CALC_OVERFLOW</code>），绝不能让异常跨 C 边界传播！",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#32667a">🌉 C/C++ 混合边界契约 (calc.h)</div>
+                  <div class="mem-block show">
+                    <div class="addr">#ifdef __cplusplus extern "C"</div>
+                    <div class="val" style="color:#32667a">C 兼容基本类型 + 错误码枚举 + 事前防整数溢出</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#a54643">🚫 extern "C" 边界三大禁令</div>
+                  <div class="mem-block leak show">
+                    <div class="addr">练习 9-B 边界红线</div>
+                    <div class="val" style="color:#a54643">禁传 std::vector/string/引用；禁跨边界抛异常；禁混用 free 与 delete！</div>
+                  </div>
+                </div>
+              </div>`
+          },
+          {
+            line: 4,
+            explain: "步骤 4（9.6–9.9 节 & 练习 9-C/D/E：CMake 目标传播与 CTest 断言坑）：在 <code>CMakeLists.txt</code> 中将 <code>calc</code> 库的头文件目录设为 <code>PUBLIC</code>，链接它的 <code>calc_app</code> 和 <code>calc_tests</code> 会自动获得该路径；而在 <code>calc_tests.cpp</code> 中<b>绝不能用 <code>assert(calc_add(...) == CALC_OK)</code> 做唯一验证</b>，因为 Release 模式定义 <code>NDEBUG</code> 会把整个 <code>assert</code> 连同里面的被测调用一起删光！必须用显式 <code>if</code> 判断并返回非零退出码。",
+            render: `
+              <div class="memory-grid">
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#356d50">🛠️ CMakeLists.txt 目标属性传播</div>
+                  <div class="mem-block show highlight" style="border-color:#356d50">
+                    <div class="addr">PUBLIC vs PRIVATE vs INTERFACE</div>
+                    <div class="val" style="color:#356d50">calc (PUBLIC include) ──▶ 自动传播给 calc_app 与 calc_tests</div>
+                  </div>
+                </div>
+                <div class="mem-col">
+                  <div class="zone-title" style="color:#88601c">🚨 calc_tests.cpp：Release 模式必用显式 if</div>
+                  <div class="mem-block show" style="border-color:#88601c">
+                    <div class="addr">禁用 assert 做唯一业务测试</div>
+                    <div class="val" style="color:#88601c">Release 下 NDEBUG 会抹除 assert！必须用 if (...) return 1; 配合 CTest</div>
+                  </div>
+                </div>
+              </div>`
+          }
+        ]
+      }
+    ];
+
+    let curTopic = 0;
+    let curStep = 0;
+    let autoTimer = null;
+    let playIntervalMs = 2400;
+
+    function stopAuto() {
+      const btn = document.getElementById('autoBtn');
+      if (autoTimer) {
+        clearInterval(autoTimer);
+        autoTimer = null;
+      }
+      if (btn) {
+        btn.textContent = '▶ 自动播放';
+        btn.classList.remove('auto-active');
+        btn.setAttribute('aria-pressed', 'false');
+      }
+    }
+
+    function renderView() {
+      const t = topics[curTopic];
+      const stepObj = t.steps[curStep];
+      const tabs = document.querySelectorAll('.tab-btn');
+      document.getElementById('topicTitle').textContent = t.title.replace(/^[①-⑳]\s*/, '');
+      document.getElementById('topicNumber').textContent = `${String(curTopic + 1).padStart(2, '0')} / ${topics.length} · 专题`;
+      document.getElementById('topicChapter').textContent = tabs[curTopic].dataset.chapter;
+      document.getElementById('topicAnalogy').innerHTML = t.analogy;
+      document.getElementById('stepIndicator').textContent = `${curStep + 1} / ${t.steps.length}`;
+      document.getElementById('currentLine').textContent = `当前高亮：第 ${stepObj.line + 1} 行`;
+
+      const dotsContainer = document.getElementById('stepDots');
+      const restoreStepFocus = dotsContainer.contains(document.activeElement);
+      dotsContainer.innerHTML = t.steps.map((_, idx) => `
+        <button type="button" class="step-dot ${idx === curStep ? 'active' : ''}" onclick="jumpStep(${idx})" aria-label="第 ${idx + 1} 步" aria-current="${idx === curStep ? 'step' : 'false'}" title="跳转到第 ${idx + 1} 步">${idx + 1}</button>
+      `).join('');
+      if (restoreStepFocus) dotsContainer.children[curStep].focus({ preventScroll: true });
+      document.getElementById('prevBtn').disabled = (curStep === 0);
+      document.getElementById('nextBtn').disabled = (curStep === t.steps.length - 1);
+
+      const codeList = document.getElementById('codeList');
+      codeList.innerHTML = t.code.map((line, idx) => `
+        <div class="code-line ${idx === stepObj.line ? 'active' : ''}">
+          <span class="line-number" aria-hidden="true">${idx + 1}</span>
+          <code class="code-text">${line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code>
+        </div>
+      `).join('');
+      const activeLine = codeList.querySelector('.active');
+      if (activeLine.offsetTop < codeList.scrollTop) {
+        codeList.scrollTop = activeLine.offsetTop;
+      } else if (activeLine.offsetTop + activeLine.offsetHeight > codeList.scrollTop + codeList.clientHeight) {
+        codeList.scrollTop = activeLine.offsetTop + activeLine.offsetHeight - codeList.clientHeight;
+      }
+
+      document.getElementById('stageContainer').innerHTML = stepObj.render;
+      document.getElementById('stepExplain').innerHTML = stepObj.explain;
+      tabs.forEach((btn, idx) => {
+        btn.classList.toggle('active', idx === curTopic);
+        btn.setAttribute('aria-current', idx === curTopic ? 'true' : 'false');
+      });
+    }
+
+
+    function switchTopic(idx) {
+      stopAuto();
+      curTopic = idx;
+      curStep = 0;
+      renderView();
+      if (window.matchMedia('(max-width: 900px)').matches) {
+        document.getElementById('topicDirectory').open = false;
+        document.getElementById('topicTitle').focus();
+      }
+    }
+
+    function jumpStep(idx) {
+      stopAuto();
+      const t = topics[curTopic];
+      if (idx >= 0 && idx < t.steps.length) {
+        curStep = idx;
+        renderView();
+      }
+    }
+
+    function restartStep() {
+      stopAuto();
+      curStep = 0;
+      renderView();
+    }
+
+    function nextStep() {
+      const t = topics[curTopic];
+      if (curStep < t.steps.length - 1) {
+        curStep++;
+        renderView();
+        if (curStep === t.steps.length - 1 && autoTimer) {
+          stopAuto();
+        }
+      } else {
+        stopAuto();
+      }
+    }
+
+    function prevStep() {
+      stopAuto();
+      if (curStep > 0) {
+        curStep--;
+        renderView();
+      }
+    }
+
+    function changeSpeed() {
+      const sel = document.getElementById('speedSelect');
+      if (sel) {
+        playIntervalMs = parseInt(sel.value, 10) || 2400;
+      }
+      if (autoTimer) {
+        clearInterval(autoTimer);
+        autoTimer = setInterval(nextStep, playIntervalMs);
+      }
+    }
+
+    function toggleAuto() {
+      const btn = document.getElementById('autoBtn');
+      const t = topics[curTopic];
+      if (autoTimer) {
+        stopAuto();
+      } else {
+        if (curStep >= t.steps.length - 1) {
+          curStep = 0;
+          renderView();
+        }
+        btn.textContent = '⏸ 暂停播放';
+        btn.classList.add('auto-active');
+        btn.setAttribute('aria-pressed', 'true');
+        autoTimer = setInterval(nextStep, playIntervalMs);
+      }
+    }
+
+    if (window.matchMedia('(max-width: 900px)').matches) {
+      document.getElementById('topicDirectory').open = false;
+    }
+    renderView();
+  </script>
+</body>
+</html>
